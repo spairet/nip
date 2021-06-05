@@ -1,0 +1,5 @@
+class: !NotNipClass
+  name: abra
+
+func: !NoNipFunc
+  name: cadabra

@@ -1,0 +1,6 @@
+obj: !SimpleClass
+  name: "Hello World!"
+
+func: !myfunc
+  a: 1
+  c: 2

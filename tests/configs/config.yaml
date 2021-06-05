@@ -1,0 +1,18 @@
+--- MyDocument
+
+main: &main
+  first:
+    in1: "11"
+    in2: 12.5
+  second: [1, 2, 3]
+
+  third: {'a': "123", '123': "qweqwe"}
+
+
+other:
+  main: *main
+  list:
+    - 1
+    - 2
+    -
+      abra: @ ["cadabra", "ababra", "avocado"]
