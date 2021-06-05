@@ -1,0 +1,2 @@
+# nip
+Nice Iterable Parser
