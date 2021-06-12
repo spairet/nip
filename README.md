@@ -1,13 +1,13 @@
-# YAP
-Yaml-like Advanced Parser
+# NIP
+Nice Iterable Parser
 
 
 ### Main features:
-1. Simple @yap wrapper to register class or fucntion for auto constructing python object by config
+1. Simple @nip wrapper to register class or fucntion for auto constructing python object by config
 2. Simple Access to config elements (e.g. config['model']) and partial config loading.
 3. Any config element can be converted to simple python dicts and lists with to_python() method.
 4. Config iterators: you are able to write iterable variables in config (e.g. path: @ ['/first', '/second', '/third']) and as a result you will get an iterator over this configs or even constructed objects (using parse or load method correspondingly).
-5. Module wrapping. With @yap you can automatically wrap everything under module.
+5. Module wrapping. With @nip you can automatically wrap everything under module.
 
 
 ### Examples
@@ -24,7 +24,7 @@ Take a look at /test/test.py and /test/configs/* for understanding the functiona
 
 ### Future plans
 1. Multiline strings with """ operator (currently only single string lines are supported)
-2. Auto-wrapping everything in locals() with @yap
+2. Auto-wrapping everything in locals() with @nip
 4. Args element: List + Dict. With an opportunity to pass this to funtions as \*args and \*\*kwargs respectively
 5. \_\_init\_\_ wrapper for convenient object dumping (currently object dumping is not supported. only config dumping)
 6. Multi document parsing.
@@ -35,6 +35,6 @@ Take a look at /test/test.py and /test/configs/* for understanding the functiona
 
 
 ### Feedback
-Everything currently presented in yap and future plans are discussable. Feel free to suggest any ideas for future updates with Issues or PRs.
+Everything currently presented in nip and future plans are discussable. Feel free to suggest any ideas for future updates with Issues or PRs.
 
 If you find any bugs or unexpected behaviour please report it with attached config file.

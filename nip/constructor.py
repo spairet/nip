@@ -41,7 +41,7 @@ class Constructor:
 
     def load_builders(self):
         self.builders.update(global_builders)
-        self.builders.update(get_sub_dict(YAPBuilder))
+        self.builders.update(get_sub_dict(NIPBuilder))
 
 
 class ConstructorError(Exception):
@@ -50,7 +50,7 @@ class ConstructorError(Exception):
 
 # mb: add meta for auto detecting this class as YAP-builder
 # ToDo: Add init wrapper for auto detection init args for convenient object dumping
-class YAPBuilder:
+class NIPBuilder:
     pass
 
 
