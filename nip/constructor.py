@@ -55,7 +55,7 @@ class NIPBuilder:
 
 
 def nip_decorator(name=None, wrap_call=False):
-    assert len(name) > 0, "name should be nonempty"
+    assert name is None or len(name) > 0, "name should be nonempty"
 
     def _(item):
         if wrap_call:
@@ -79,8 +79,8 @@ def nip(wrap_call=False):
 
 
 @dispatch([(type, FunctionType)])
-def nip(_: Union[type, FunctionType]):
-    return nip_decorator()
+def nip(item: Union[type, FunctionType]):
+    return nip_decorator()(item)
 
 
 @dispatch(ModuleType)

@@ -34,3 +34,8 @@ class NotNipClass:
 
 def NoNipFunc(name):
     print("NoYapFunc:", name)
+
+
+def show(*args, **kwargs):
+    print('args:', args)
+    print('kwargs:', kwargs)

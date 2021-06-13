@@ -8,7 +8,7 @@ import nip.stream
 import nip.tokens as tokens
 
 from abc import abstractmethod, ABC
-from typing import Any, Type, Union
+from typing import Any, Type, Union, Tuple
 
 
 class Element(ABC):
@@ -68,158 +68,6 @@ class Document(Element):  # ToDo: add multi document support
         return "--- " + self.value.dump(dumper)
 
 
-class DictPair(Element):
-    @classmethod
-    def read(cls, stream: nip.stream.Stream, parser: nip.parser.Parser) -> Union[DictPair, None]:
-        pos, key = tokens.Name.read(stream)
-        if not pos:
-            return None
-        stream.move(pos)
-
-        pos, op = tokens.Operator.read(stream)
-        if not pos or op != ':':
-            raise nip.parser.ParserError(stream, "Wrong dict pair assertion")
-        stream.move(pos)
-
-        value = RightValue.read(stream, parser)
-
-        return DictPair(key, value)
-
-    def dump(self, dumper: nip.dumper.Dumper):
-        return " "*dumper.indent + \
-               self.name + ': ' + \
-               self.value.dump(dumper + dumper.default_shift)
-
-
-class Dict(Element):
-    @classmethod
-    def read(cls, stream: nip.stream.Stream, parser: nip.parser.Parser) -> Union[Dict, None]:
-        pos, indent = tokens.Indent.read(stream)
-        if indent is None:
-            return None
-        start_indent = indent
-
-        current_dict = []
-        while stream and indent == start_indent:
-            stream.move(pos)
-            pair = DictPair.read(stream, parser)
-            if not pair:
-                break
-            current_dict.append(pair)
-
-            if not stream:
-                break
-
-            pos, indent = tokens.Indent.read(stream)
-            if stream and indent is None:
-                raise nip.parser.ParserError(stream, "Unexpected dict value")
-            if stream and indent > start_indent:
-                raise nip.parser.ParserError(stream, "Error reading dict indent")
-
-        if len(current_dict) == 0:  # Unable to read dict pair
-            stream.pos = 0
-            return None
-
-        return Dict('name', current_dict)
-
-    def __str__(self):
-        values_string = "[" + ", ".join([str(item) for item in self.value]) + "]"
-        return f"{self.__class__.__name__}('{self.name}', {values_string})"
-
-    def __bool__(self):
-        return bool(self.value)
-
-    def __getitem__(self, item):
-        for pair in self.value:
-            if item == pair.name:
-                return pair.value
-        raise KeyError(f"Undefined key '{item}'")
-
-    def to_python(self):
-        return {
-            pair.name: pair.value.to_python()
-            for pair in self.value
-        }
-
-    def construct(self, constructor: nip.constructor.Constructor):
-        return {
-            pair.name: pair.value.construct(constructor)
-            for pair in self.value
-        }
-
-    def dump(self, dumper: nip.dumper.Dumper):
-        string = ""
-        for pair in self.value:
-            string += "\n" + pair.dump(dumper)
-        return string
-
-
-class ListItem(Element):
-    @classmethod
-    def read(cls, stream: nip.stream.Stream, parser: nip.parser.Parser) -> Union[ListItem, None]:
-        pos, op = tokens.Operator.read(stream)
-        if not pos or op != '-':
-            return None
-        stream.move(pos)
-
-        value = RightValue.read(stream, parser)
-
-        return ListItem('ListItem', value=value)
-
-    def dump(self, dumper: nip.dumper.Dumper):
-        return " "*dumper.indent + '- ' + self.value.dump(dumper + dumper.default_shift)
-
-
-class List(Element):
-    @classmethod
-    def read(cls, stream: nip.stream.Stream, parser: nip.parser.Parser) -> Union[List, None]:
-        pos, indent = tokens.Indent.read(stream)
-        if indent is None:
-            return None
-        start_indent = indent
-        current_list = []
-        while stream and indent == start_indent:
-            stream.move(pos)
-            item = ListItem.read(stream, parser)
-            if not item:
-                break
-            current_list.append(item)
-
-            if not stream:
-                break
-
-            pos, indent = tokens.Indent.read(stream)
-            if stream and indent is None:
-                raise nip.parser.ParserError(stream, "Unexpected list value")
-            if stream and indent > start_indent:
-                raise nip.parser.ParserError(stream, "Error reading list indent")
-
-        if len(current_list) == 0:  # Unable to read list item
-            stream.pos = 0
-            return None
-
-        return List('name', current_list)
-
-    def __str__(self):
-        values_string = "[" + ", ".join([str(item) for item in self.value]) + "]"
-        return f"{self.__class__.__name__}('{self.name}', {values_string})"
-
-    def __bool__(self):
-        return bool(self.value)
-
-    def to_python(self):
-        return [item.to_python() for item in self.value]
-
-    def construct(self, constructor: nip.constructor.Constructor):
-        return [item.construct(constructor) for item in self.value]
-
-    def dump(self, dumper: nip.dumper.Dumper):
-        string = ""
-        for item in self.value:
-            string += "\n" + item.dump(dumper)
-        return string
-
-
 class RightValue(Element):
     @classmethod
     def read(cls, stream: nip.stream.Stream, parser: nip.parser.Parser) -> Element:
@@ -227,8 +75,7 @@ class RightValue(Element):
                 Link.read(stream, parser) or \
                 Tag.read(stream, parser) or \
                 Iter.read(stream, parser) or \
-                Dict.read(stream, parser) or \
-                List.read(stream, parser) or \
+                Args.read(stream, parser) or \
                 Value.read(stream, parser)
 
         if not value:
@@ -322,12 +169,14 @@ class Tag(Element):
         stream.move(pos)
 
         value = RightValue.read(stream, parser)
+        assert isinstance(value, Args), "Tag should be created with List or Dict or Args"
+
         parser.tags[name] = value
         return Tag(name, value)
 
     def construct(self, constructor: nip.constructor.Constructor):
-        args = self.value.construct(constructor)  # ToDo: dict or list as well?
-        return constructor.builders[self.name](**args)
+        args, kwargs = self.value.construct(constructor, always_pair=True)
+        return constructor.builders[self.name](*args, **kwargs)
 
     def dump(self, dumper: nip.dumper.Dumper):
         return f"!{self.name} " + self.value.dump(dumper)
@@ -335,14 +184,105 @@ class Tag(Element):
 
 class Args(Element):  # ToDo: Append to lib
     @classmethod
-    def read(cls, stream: nip.stream.Stream, parser: nip.parser.Parser) -> Args:
-        args = List.read(stream, parser)
-        kwargs = Dict.read(stream, parser)
+    def read(cls, stream: nip.stream.Stream, parser: nip.parser.Parser) -> Union[Args, None]:
+        args: list = cls._read_list(stream, parser)
+        kwargs: dict = cls._read_dict(stream, parser)
+        if not args and not kwargs:
+            return None
         return Args("args", (args, kwargs))
 
+    @classmethod
+    def _read_list(cls, stream: nip.stream.Stream, parser: nip.parser.Parser) -> list:
+        pos, indent = tokens.Indent.read(stream)
+        if indent is None:
+            return []
+        start_indent = indent
+        current_list = []
+        while stream and indent == start_indent:
+            stream.move(pos)
+            item = cls._read_list_item(stream, parser)
+            if not item:
+                break
+            current_list.append(item)
+
+            if not stream:
+                break
+
+            pos, indent = tokens.Indent.read(stream)
+            if stream and indent is None:
+                raise nip.parser.ParserError(stream, "Unexpected list value")
+            if stream and indent > start_indent:
+                raise nip.parser.ParserError(stream, "Error reading list indent")
+
+        if not item:
+            stream.pos = 0
+
+        return current_list
+
+    @classmethod
+    def _read_list_item(cls, stream: nip.stream.Stream, parser: nip.parser.Parser) \
+            -> Union[Element, None]:
+        pos, op = tokens.Operator.read(stream)
+        if not pos or op != '-':
+            return None
+        stream.move(pos)
+
+        value = RightValue.read(stream, parser)
+
+        return value
+
+    @classmethod
+    def _read_dict(cls, stream: nip.stream.Stream, parser: nip.parser.Parser) -> dict:
+        pos, indent = tokens.Indent.read(stream)
+        if indent is None:
+            return {}
+        start_indent = indent
+
+        current_dict = {}
+        while stream and indent == start_indent:
+            stream.move(pos)
+            key, value = cls._read_dict_pair(stream, parser)
+            if not key:
+                break
+            current_dict[key] = value
+
+            if not stream:
+                break
+
+            pos, indent = tokens.Indent.read(stream)
+            if stream and indent is None:
+                raise nip.parser.ParserError(stream, "Unexpected dict value")
+            if stream and indent > start_indent:
+                raise nip.parser.ParserError(stream, "Error reading dict indent")
+
+        if not key:
+            stream.pos = 0
+
+        return current_dict
+
+    @classmethod
+    def _read_dict_pair(cls, stream: nip.stream.Stream, parser: nip.parser.Parser) \
+            -> Union[Tuple[str, Element], Tuple[None, None]]:
+        pos, key = tokens.Name.read(stream)
+        if not pos:
+            return None, None
+        stream.move(pos)
+
+        pos, op = tokens.Operator.read(stream)
+        if not pos or op != ':':
+            raise nip.parser.ParserError(stream, "Wrong dict pair assertion")
+        stream.move(pos)
+
+        value = RightValue.read(stream, parser)
+
+        return key, value
+
     def __str__(self):
-        values_string = "[" + ", ".join([str(item) for item in self.value]) + "]"
-        return f"{self.__class__.__name__}('{self.name}', {values_string})"
+        args_repr = "[" + ", ".join([str(item) for item in self.value[0]]) + "]"
+        kwargs_repr = \
+            "{" + ", ".join([f"{key}: {str(value)}" for key, value in self.value[1].items()]) + "}"
+
+        return f"{self.__class__.__name__}('{self.name}', {args_repr}, {kwargs_repr})"
 
     def __bool__(self):
         return bool(self.value[0]) or bool(self.value[1])
@@ -350,14 +290,37 @@ class Args(Element):  # ToDo: Append to lib
     def __getitem__(self, item):
         try:
             return self.value[0][item]
-        except KeyError:
+        except TypeError:
             return self.value[1][item]
 
     def to_python(self):
-        return self.value[0].to_python(), self.value[1].to_python()
+        args = list(item.to_python() for item in self.value[0])
+        kwargs = {key: value.to_python() for key, value in self.value[1].items()}
+        assert args or kwargs, "Error converting Args node to python"  # This should never happen
+        if args and kwargs:
+            return args, kwargs
+        return args or kwargs
 
-    def construct(self, constructor: nip.constructor.Constructor):
-        return self.value[0].construt(constructor), self.value[1].construct(constructor)
+    def construct(self, constructor: nip.constructor.Constructor, always_pair=False):
+        args = list(item.construct(constructor) for item in self.value[0])
+        kwargs = {key: value.construct(constructor) for key, value in self.value[1].items()}
+        assert args or kwargs, "Error converting Args node to python"  # This should never happen
+        if args and kwargs or always_pair:
+            return args, kwargs
+        return args or kwargs
+
+    def dump(self, dumper: nip.dumper.Dumper):
+        dumped_args = '\n'.join([
+            " "*dumper.indent + f"- {item.dump(dumper + dumper.default_shift)}"
+            for item in self.value[0]
+        ])
+
+        dumped_kwargs = '\n'.join([
+            " "*dumper.indent + f"{key}: {value.dump(dumper + dumper.default_shift)}"
+            for key, value in self.value[1].items()
+        ])
+
+        return '\n' + dumped_args + dumped_kwargs
 
 
 class Iter(Element):
