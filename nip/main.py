@@ -138,7 +138,7 @@ def run(path: Union[str, Path],
         return_values: bool = True,
         return_configs: bool = True,
         always_iter: bool = False):
-    """Runs config. Config should be declared with a function to run.
+    """Runs config. Config should be declared with function to run as a tag for the Document.
     In case of iterable configs we will iterate over and run each of them.
 
     Parameters
