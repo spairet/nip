@@ -11,7 +11,7 @@ Everything currently presented in nip and future plans are discussable. Feel fre
 If you find any bugs or unexpected behaviour please report it with an attached config file.
 
 
-####Future plans for realization
+#### Future plans for realization
 
 1. Multiline strings with """ operator (currently only single string lines are supported)
 2. Auto-wrapping everything in locals() with @nip
