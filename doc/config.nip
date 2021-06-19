@@ -1,7 +1,0 @@
-class_object: !MyCoolClass
-  question: Ultimate Question of Life, The Universe, and Everything
-  answer: 42
-
-func_value: !just_func
-  - 1
-  c: 4
