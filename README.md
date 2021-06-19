@@ -1,7 +1,7 @@
 # NIP
 Nice Iterable Parser
 
-User guide can be found in [doc directory](https://github.com/spairet/nip/tree/pypi/doc)
+User guide can be found in [doc directory](https://github.com/spairet/nip/tree/main/doc)
 
 
 Call for Contributions
