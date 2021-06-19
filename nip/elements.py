@@ -151,7 +151,7 @@ class Link(Element):
 
         return parser.links[name]
 
-    # mb: construct the same object for every link? optionally?
+    # mb: copy of object for every link? optionally?
 
 
 class Tag(Element):
@@ -182,24 +182,27 @@ class Tag(Element):
         return f"!{self.name} " + self.value.dump(dumper)
 
 
-class Args(Element):  # ToDo: Append to lib
+class Args(Element):
     @classmethod
     def read(cls, stream: nip.stream.Stream, parser: nip.parser.Parser) -> Union[Args, None]:
-        args: list = cls._read_list(stream, parser)
-        kwargs: dict = cls._read_dict(stream, parser)
-        if not args and not kwargs:
+        pos, indent = tokens.Indent.read(stream)
+        if indent is None:
             return None
+        stream.move(pos)
+
+        args: list = cls._read_list(stream, parser, indent)
+        kwargs: dict = cls._read_dict(stream, parser, indent)
+
+        if not args and not kwargs:
+            raise nip.parser.ParserError(stream, "Error reading indented element")
         return Args("args", (args, kwargs))
 
     @classmethod
-    def _read_list(cls, stream: nip.stream.Stream, parser: nip.parser.Parser) -> list:
-        pos, indent = tokens.Indent.read(stream)
-        if indent is None:
-            return []
-        start_indent = indent
+    def _read_list(cls, stream: nip.stream.Stream, parser: nip.parser.Parser,
+                   start_indent: int) -> list:
+        indent = start_indent
         current_list = []
         while stream and indent == start_indent:
-            stream.move(pos)
             item = cls._read_list_item(stream, parser)
             if not item:
                 break
@@ -209,13 +212,8 @@ class Args(Element):  # ToDo: Append to lib
                 break
 
             pos, indent = tokens.Indent.read(stream)
-            if stream and indent is None:
-                raise nip.parser.ParserError(stream, "Unexpected list value")
-            if stream and indent > start_indent:
-                raise nip.parser.ParserError(stream, "Error reading list indent")
-
-        if not item:
-            stream.pos = 0
+            if indent == start_indent:
+                stream.move(pos)
 
         return current_list
 
@@ -232,15 +230,12 @@ class Args(Element):  # ToDo: Append to lib
         return value
 
     @classmethod
-    def _read_dict(cls, stream: nip.stream.Stream, parser: nip.parser.Parser) -> dict:
-        pos, indent = tokens.Indent.read(stream)
-        if indent is None:
-            return {}
-        start_indent = indent
+    def _read_dict(cls, stream: nip.stream.Stream, parser: nip.parser.Parser,
+                   start_indent: int) -> dict:
+        indent = start_indent
 
         current_dict = {}
         while stream and indent == start_indent:
-            stream.move(pos)
             key, value = cls._read_dict_pair(stream, parser)
             if not key:
                 break
@@ -250,13 +245,8 @@ class Args(Element):  # ToDo: Append to lib
                 break
 
             pos, indent = tokens.Indent.read(stream)
-            if stream and indent is None:
-                raise nip.parser.ParserError(stream, "Unexpected dict value")
-            if stream and indent > start_indent:
-                raise nip.parser.ParserError(stream, "Error reading dict indent")
-
-        if not key:
-            stream.pos = 0
+            if indent == start_indent:
+                stream.move(pos)
 
         return current_dict
 
@@ -332,14 +322,15 @@ class Iter(Element):
     @classmethod
     def read(cls, stream: nip.stream.Stream, parser: nip.parser.Parser) -> Union[Iter, None]:
         pos, op = tokens.Operator.read(stream)
-        if pos > 0 and (op == '@'):  # mb: other operator? mb: read full RightValue here?
+        if pos > 0 and (op == '@'):  # mb: other operator?
             stream.move(pos)
         else:
             return None
 
         pos, name = tokens.Name.read(stream)
         stream.move(pos)
-        pos, iter_list = tokens.List.read(stream)  # Mb: or tuple
+        # mb: read full RightValue here? what with nested cases?
+        pos, iter_list = tokens.List.read(stream)  # mb: or tuple
         if not pos:
             nip.parser.ParserError(stream, "Wrong iter creation")
         stream.move(pos)

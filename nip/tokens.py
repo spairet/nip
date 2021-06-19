@@ -57,10 +57,13 @@ class String(Token):
             pos += 1
             return pos, stream[1:pos - 1]
 
-        if stream[pos] not in Operator.symbols and not stream[pos].isspace():
-            string = stream[pos:]
-            return len(string), string
-        return 0, ""
+        if stream[pos].isspace() or stream[pos] in Operator.symbols:
+            return 0, ""
+
+        while stream[pos] and stream[pos] != '#':
+            pos += 1
+
+        return pos, stream[:pos]
 
 
 class Name(Token):
@@ -88,7 +91,7 @@ class Operator(Token):
         return pos, stream[:pos]
 
 
-class Indent(Token):  # ToDo: not needed now?
+class Indent(Token):
     @staticmethod
     def read(stream: Stream) -> Tuple[int, Union[int, None]]:
         if not stream or stream.pos != 0:
