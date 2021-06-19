@@ -27,7 +27,7 @@ Lets take a look at this config example.
 >```
 
 Some differences from yaml:
-- named list items are **forbidden** due to the uniformity and realization issues. So, this code will raise en exception:warning::
+- Named list items are **forbidden** due to the uniformity and realization issues. So, this code will raise en exception:warning::
     ```yaml
     - nested_list
       - 1
@@ -143,7 +143,7 @@ will result in:
 _Note:_ All the iterators works with construction of your custom objects and using links in the config doesn't recreates them, as in the examples above.
 
 ### Additional features 
-There are some small but useful features alsa presented in **nip**:
+There are some small but useful features also presented in **nip**:
 1. Accessing parts of your config without full construction. Once you parsed your config
    ```python
    from nip import parse, construct
