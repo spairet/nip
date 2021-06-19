@@ -23,7 +23,7 @@ Lets take a look at this config example.
 >  inline_list: [1, 2, 3]
 >  incline_dict: {'a': "123", 'b': 321}
 >
->main_copy: *main
+>also_main: *main
 >```
 
 Some differences from yaml:
