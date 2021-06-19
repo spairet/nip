@@ -183,4 +183,4 @@ There are some small but useful features also presented in **nip**:
    This will result in running a number of experiments using generated configs. 
 
 
-Most of the functions mentioned in this short documentation have additional parameters, so feel free to into the docstrings. :yum:
+Most of the functions mentioned in this short documentation have additional parameters, so feel free to look into the docstrings. :yum:
