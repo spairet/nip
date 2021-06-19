@@ -1,7 +1,6 @@
-Documentation
+User Guide
 ----
-This documentation will guide you through main features of nip.
-All the corresponding code cna be found /tests directory
+This brief guide will walk you through main functionality and some extended features of **nip**.
 
 ### Usual yaml behaviour
 **NIP** inherits syntax and most of base functionality of yaml config files with a small differences.
