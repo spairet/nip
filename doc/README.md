@@ -39,7 +39,7 @@ Some differences from yaml:
 
 - Keys of inline dict should be quoted. This is related to the realization detail that would be clarified a bit later.
 
-_Note:_ **nip** is not extension sensitive, so feel free to change extension to `.yml` for syntax highlighting. **Nip** doesn't have its own highlighting yet:sad: 
+_Note:_ **nip** is not extension sensitive, so feel free to change extension to `.yml` for syntax highlighting. **Nip** doesn't have its own highlighting yet :cry: 
 
 ### Main functions
  
