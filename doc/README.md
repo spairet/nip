@@ -27,17 +27,13 @@ Lets take a look at this config example.
 >```
 
 Some differences from yaml:
-- named list items are **forbidden**: casual yaml will create a single item dict for this code:
+- named list items are **forbidden** due to the uniformity and realization issues. So, this code will raise en exception:warning::
     ```yaml
     - nested_list
       - 1
       - 2
     ```
-  And corresponding python object would be: `[{'nested_list': [1, 2]}]`
-  
-  In my opinion, this behaviour breaks the uniformity of nested list presentation, so this config will raise an error in **nip**.
-
-- Keys of inline dict should be quoted. This is related to the realization detail that would be clarified a bit later.
+- Keys of inline dict should be quoted.
 
 _Note:_ **nip** is not extension sensitive, so feel free to change extension to `.yml` for syntax highlighting. **Nip** doesn't have its own highlighting yet :cry: 
 
