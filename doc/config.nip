@@ -1,16 +1,7 @@
----
+class_object: !MyCoolClass
+  question: Ultimate Question of Life, The Universe, and Everything
+  answer: 42
 
-main: &main
-  yaml_style_dict:
-    string: "11"
-    also_string: I am a string!
-    float: 12.5
-  yaml_style_list:
-    - first item  # inline comment
-    - 2
-    -
-      - nested list item
-  inline_list: [1, 2, 3]
-  incline_dict: {'a': "123", 'b': 321}
-
-main_copy: *main
+func_value: !just_func
+  - 1
+  c: 4

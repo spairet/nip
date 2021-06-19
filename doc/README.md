@@ -47,5 +47,63 @@ _Note:_ **nip** is not extension sensitive, so feel free to change extension to 
  - `construct(element)` - constructs element into python object
  - `load("config.nip")` - parses config and constructs python object
  - `dump("save_config.nip", element)` - dumps element to a config file
+ - `dumps(element)` - return dumped element as a string
  
- 
+### Constructing custom objects
+Just like PyYAML, **nip** allows you to construct your own python objects from config. But in **nip** this is a way more easier.
+
+First of all, you need to wrap you function or class with `@nip` decorator. For example:
+```python
+from nip import nip
+
+
+@nip
+class MyCoolClass:
+    def __init__(self, question, answer):
+        self.question = question
+        self.answer = answer
+
+
+@nip('just_func')
+def MyCoolFunc(a, b=2, c=3):
+    return a + b * 2 + c * 3
+```
+
+From now you are able to construct them with a config file using `!` operator:
+```yaml
+class_object: !MyCoolClass
+  question: Ultimate Question of Life, The Universe, and Everything
+  answer: 42
+
+func_value: !just_func
+  - 1
+  c: 4
+```
+So `load("config.nip")` will return dict:
+```yaml
+{
+  'class_object': <__main__.MyCoolClass object at 0x000001F6E13F1988>,
+  'func_value': 17
+}
+```
+_Note:_ if you specify your wrapped objects in other `.py` file, you have to import it before calling `load()`.
+
+
+There is a number of features for this functionality:
+1. `@nip` decorator allows you to specify name for the object to be used in config file (`just_func` in the example)
+2. You can combine `args` and `kwargs` in the config. (`just_func` creation).
+
+    _Actually you are able to create this combined element anywhere in the config, and it will be loaded as a tuple of list and dict._
+3. You can  automatically wrap everything under module.
+   Here are two variants of wrapping `source` module:
+   ```python
+   from nip import nip
+   
+   import source
+   nip(source)
+   ```
+    ```python
+    from nip import wrap_module
+    
+    wrap_module("source")
+    ``` 
