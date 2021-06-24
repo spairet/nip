@@ -4,6 +4,13 @@ Nice Iterable Parser
 User guide can be found in [doc directory](https://github.com/spairet/nip/tree/main/doc)
 
 
+Installation
+--
+
+``` sh
+$ pip install nip-config
+```
+
 Call for Contributions
 --
 Everything currently presented in nip and future plans are discussable. Feel free to suggest any ideas for future updates or PRs.
