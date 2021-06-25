@@ -104,7 +104,9 @@ class Value(Element):
     def to_python(self):
         return self.value
 
-    def construct(self, constructor: nip.constructor.Constructor):
+    def construct(self, constructor: nip.constructor.Constructor, always_pair=False):
+        if always_pair:
+            return [self.value], {}
         return self.value
 
     def dump(self, dumper: nip.dumper.Dumper):
@@ -151,8 +153,6 @@ class Link(Element):
 
         return parser.links[name]
 
-    # mb: copy of object for every link? optionally?
-
 
 class Tag(Element):
     @classmethod
@@ -169,7 +169,7 @@ class Tag(Element):
         stream.move(pos)
 
         value = RightValue.read(stream, parser)
-        assert isinstance(value, Args), "Tag should be created with List or Dict or Args"
+        assert isinstance(value, (Args, Value)), "Tag should be created with List or Dict or Args"
 
         parser.tags[name] = value
         return Tag(name, value)

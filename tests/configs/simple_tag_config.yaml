@@ -4,3 +4,5 @@ obj: !SimpleClass
 func: !myfunc
   a: 1
   c: 2
+
+single: !myfunc qwe
