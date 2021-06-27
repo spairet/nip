@@ -3,7 +3,7 @@ import importlib
 import importlib.util
 
 from typing import Callable, Optional, Union
-from types import FunctionType, ModuleType
+from types import FunctionType, ModuleType, BuiltinFunctionType
 from multipledispatch import dispatch
 
 from .utils import get_sub_dict
@@ -78,14 +78,14 @@ def nip(wrap_call=False):
     return nip_decorator(wrap_call=wrap_call)
 
 
-@dispatch([(type, FunctionType)])
+@dispatch([(type, FunctionType, BuiltinFunctionType)])
 def nip(item: Union[type, FunctionType]):
     return nip_decorator()(item)
 
 
 @dispatch(ModuleType)
-def nip(module):
-    wrap_module(module)
+def nip(module, wrap_builtins=False):
+    wrap_module(module, wrap_builtins)
 
 
 def call_wrapper(item: Union[type, FunctionType]):  # wraps call for convenient object dump
@@ -104,7 +104,7 @@ def call_wrapper(item: Union[type, FunctionType]):  # wraps call for convenient 
     return call_dumper
 
 
-def wrap_module(module: Union[str, ModuleType]):
+def wrap_module(module: Union[str, ModuleType], wrap_builtins=False):
     """Wraps everything declared in module with @nip
 
     Parameters
@@ -116,5 +116,6 @@ def wrap_module(module: Union[str, ModuleType]):
         module = importlib.import_module(module)
 
     for value in module.__dict__.values():
-        if isinstance(value, (type, FunctionType)):
+        if isinstance(value, (type, FunctionType)) or \
+                wrap_builtins and isinstance(value, BuiltinFunctionType):
             nip(value)

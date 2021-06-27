@@ -4,6 +4,7 @@ from .stream import Stream
 from typing import Tuple, Any, Union
 
 
+# ToDo: tokens takes parser
 class Token(ABC):
     """Abstract of token reader"""
     def __init__(self, value):
@@ -135,6 +136,22 @@ class Dict(Token):
             pos += 1
         if stream[pos] != '}':
             raise TokenError(stream, 'Dict was not closed')
+        pos += 1
+        read_dict = eval(stream[:pos])
+        return pos, read_dict
+
+
+class InlinePython(Token):
+    @staticmethod
+    def read(stream: Stream) -> Tuple[int, Any]:
+        pos = 0
+        if stream[pos] != '`':
+            return pos, []
+        pos += 1
+        while stream and stream[pos] != '`':
+            pos += 1
+        if stream[pos] != '1':
+            raise TokenError(stream, 'Inline python string was not clothed')
         pos += 1
         read_dict = eval(stream[:pos])
         return pos, read_dict

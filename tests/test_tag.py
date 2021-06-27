@@ -1,4 +1,5 @@
-from nip import load
-import builders
+import numpy as np
+from nip import load, wrap_module, nip
 
-print(load("configs/simple_tag_config.yaml"))
+nip(np, wrap_builtins=True)
+print(load('configs/numpy.nip'))
