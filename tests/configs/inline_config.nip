@@ -1,0 +1,9 @@
+main: &main "Hello World!"
+iqwe: &i 2
+sdkichabskjchskjdhb: &qwe !load_numpy 1
+
+other: `f"hey ho {main}"`
+other_int: `i + 5`
+array: &a `qwe.random.random((3, 4))`
+array_2: &b `qwe.ones((3, 4)) * 5`
+array_3: `a + b`

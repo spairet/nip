@@ -8,6 +8,7 @@ import nip.stream
 import nip.tokens as tokens
 
 from abc import abstractmethod, ABC
+from collections import OrderedDict
 from typing import Any, Type, Union, Tuple
 
 
@@ -76,7 +77,8 @@ class RightValue(Element):
                 Tag.read(stream, parser) or \
                 Iter.read(stream, parser) or \
                 Args.read(stream, parser) or \
-                Value.read(stream, parser)
+                Value.read(stream, parser) or \
+                InlinePython.read(stream, parser)
 
         if not value:
             raise nip.parser.ParserError(stream, "Wrong right value")
@@ -130,9 +132,16 @@ class LinkCreation(Element):
         stream.move(pos)
 
         value = RightValue.read(stream, parser)
-        parser.links[name] = value
+        parser.links.append(name)
 
-        return value
+        return LinkCreation(name, value)
+
+    def construct(self, constructor: nip.constructor.Constructor):
+        constructor.vars[self.name] = self.value.construct(constructor)
+        return constructor.vars[self.name]
+
+    def dump(self, dumper: nip.dumper.Dumper):
+        return f"&{self.name} {self.value.dump(dumper)}"
 
 
 class Link(Element):
@@ -151,7 +160,16 @@ class Link(Element):
             nip.parser.ParserError(stream, "Link usage before assignment")
         stream.move(pos)
 
-        return parser.links[name]
+        return Link(name)
+
+    def to_python(self):
+        return "nil"  # something that means that object is not constructed yet.
+
+    def construct(self, constructor: nip.constructor.Constructor):
+        return constructor.vars[self.name]
+
+    def dump(self, dumper: nip.dumper.Dumper):
+        return f"*{self.name}"
 
 
 class Tag(Element):
@@ -169,13 +187,21 @@ class Tag(Element):
         stream.move(pos)
 
         value = RightValue.read(stream, parser)
-        assert isinstance(value, (Args, Value)), "Tag should be created with List or Dict or Args"
+        # assert isinstance(value, (Args, Value)), "Tag should be created with List or Dict or Args"
 
-        parser.tags[name] = value
         return Tag(name, value)
 
     def construct(self, constructor: nip.constructor.Constructor):
-        args, kwargs = self.value.construct(constructor, always_pair=True)
+        value = self.value.construct(constructor)
+        if isinstance(value, tuple) and len(value) == 2 and \
+            isinstance(value[0], list) and isinstance(value[0], dict):
+            args, kwargs = value
+        elif isinstance(value, dict):
+            args, kwargs = [], value
+        elif isinstance(value, list):
+            args, kwargs = value, {}
+        else:
+            args, kwargs = [value], {}
         return constructor.builders[self.name](*args, **kwargs)
 
     def dump(self, dumper: nip.dumper.Dumper):
@@ -234,7 +260,7 @@ class Args(Element):
                    start_indent: int) -> dict:
         indent = start_indent
 
-        current_dict = {}
+        current_dict = OrderedDict()
         while stream and indent == start_indent:
             key, value = cls._read_dict_pair(stream, parser)
             if not key:
@@ -354,3 +380,21 @@ class Iter(Element):
                 "Dumping an iterator but index was not specified by IterParser"
             )
         return str(self.value[self.return_index])
+
+
+class InlinePython(Element):
+    @classmethod
+    def read(cls, stream: nip.stream.Stream, parser: nip.parser.Parser) -> Union[InlinePython, None]:
+        pos, exec_string = tokens.InlinePython.read(stream)
+        if pos > 0:
+            stream.move(pos)
+            return InlinePython(value=exec_string)
+        else:
+            return None
+
+    def construct(self, constructor: nip.constructor.Constructor):
+        locals().update(constructor.vars)
+        return eval(self.value)
+
+    def dump(self, dumper: nip.dumper.Dumper):
+        return f"`self.value`"

@@ -1,7 +1,7 @@
 from nip import nip
 
 
-@nip(wrap_call=True)
+@nip
 class SimpleClass:
     def __init__(self, name):
         self.name = name

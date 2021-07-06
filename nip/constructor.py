@@ -19,6 +19,7 @@ class Constructor:
         self.ignore_rewriting = ignore_rewriting
         if load_builders:
             self.load_builders()
+        self.vars = {}
 
     def construct(self, element):
         return element.construct(self)
@@ -45,7 +46,13 @@ class Constructor:
 
 
 class ConstructorError(Exception):
-    pass
+    def __init__(self, element):
+        self.cls = type(element).__name__
+        self.name = element.name
+        self.value = element.value
+
+    def __str__(self):
+        return f"Unable to construct {self.cls}: {self.name} with {self.value}"
 
 
 # mb: add meta for auto detecting this class as YAP-builder

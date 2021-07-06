@@ -8,10 +8,7 @@ from .stream import Stream
 
 class Parser:  # mb: we don't need Parser itself. its just storage for links and tags. Hm...
     def __init__(self):
-        self.links = {}
-        self.tags = {}
-        self.indent = 0
-        self.stream = None
+        self.links = []
         self.iterators = []
 
     def parse(self, path: Union[str, Path]):
