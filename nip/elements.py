@@ -207,7 +207,6 @@ class Tag(Element):
             args, kwargs = value, {}
         else:
             args, kwargs = [value], {}
-        print(f"constructing {self.name} with {args}, {kwargs}")
         return constructor.builders[self.name](*args, **kwargs)
 
     def dump(self, dumper: nip.dumper.Dumper):
