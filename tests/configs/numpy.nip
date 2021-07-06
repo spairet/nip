@@ -1,0 +1,1 @@
+array: !zeros [2, 3, 4]

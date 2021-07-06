@@ -1,14 +1,13 @@
 from abc import abstractmethod, ABC
+import nip.parser as parser
 
 from .stream import Stream
 from typing import Tuple, Any, Union
 
 
+# ToDo: tokens takes parser
 class Token(ABC):
     """Abstract of token reader"""
-    def __init__(self, value):
-        self.value = value
-
     @staticmethod
     @abstractmethod
     def read(stream: Stream) -> Tuple[int, Any]:
@@ -28,19 +27,18 @@ class TokenError(Exception):
 class Number(Token):
     @staticmethod
     def read(stream: Stream) -> Tuple[int, Union[int, float]]:
-        is_float = False
-        pos = 0
-        while stream[pos].isnumeric() or stream[pos] == '.':
-            if stream[pos] == '.':
-                if is_float:
-                    raise TokenError(stream, "Wrong number expression")
-                is_float = True
-            pos += 1
-        if pos == 0:
+        pos, string = String.read(stream)
+        value = None
+        for t in (int, float):
+            try:
+                value = t(string)
+                break
+            except:
+                pass
+        if value is not None:
+            return pos, value
+        else:
             return 0, 0
-        if is_float:
-            return pos, float(stream[:pos])
-        return pos, int(stream[:pos])
 
 
 class String(Token):
@@ -80,7 +78,7 @@ class Name(Token):
 
 
 class Operator(Token):
-    symbols = "@#&!-:*[]{}"
+    symbols = "@#&!-:*[]{}`"
 
     @staticmethod
     def read(stream: Stream) -> Tuple[int, str]:
@@ -138,3 +136,18 @@ class Dict(Token):
         pos += 1
         read_dict = eval(stream[:pos])
         return pos, read_dict
+
+
+class InlinePython(Token):
+    @staticmethod
+    def read(stream: Stream) -> Tuple[int, Any]:
+        pos = 0
+        if stream[pos] != '`':
+            return pos, []
+        pos += 1
+        while stream and stream[pos] != '`':
+            pos += 1
+        if stream[pos] != '`':
+            raise TokenError(stream, 'Inline python string was not clothed')
+        pos += 1
+        return pos, stream[1:pos - 1]

@@ -28,6 +28,7 @@ tree = parse("configs/simple_tag_config.yaml")
 print(tree.to_python())
 
 configs = next(parse("configs/config.yaml"))  # get first config
+print(configs['other'])
 print(configs['other'].to_python())
 
 
