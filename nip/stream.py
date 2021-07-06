@@ -11,6 +11,7 @@ class Stream:
         self.lines = [line for line in self.lines if len(line) > 0]
         self.pos = start_pos
         self.n = 0
+        self.last_indent = -1
 
     def __getitem__(self, item) -> Union[str, None]:
         if isinstance(item, int):

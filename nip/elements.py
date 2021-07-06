@@ -78,7 +78,8 @@ class RightValue(Element):
                 Iter.read(stream, parser) or \
                 Args.read(stream, parser) or \
                 Value.read(stream, parser) or \
-                InlinePython.read(stream, parser)
+                InlinePython.read(stream, parser) or \
+                Nothing.read(stream, parser)
 
         if not value:
             raise nip.parser.ParserError(stream, "Wrong right value")
@@ -187,12 +188,16 @@ class Tag(Element):
         stream.move(pos)
 
         value = RightValue.read(stream, parser)
-        # assert isinstance(value, (Args, Value)), "Tag should be created with List or Dict or Args"
+        #assert isinstance(value, (Args, Value)), "Tag should be created with List or Dict or Args"
 
         return Tag(name, value)
 
     def construct(self, constructor: nip.constructor.Constructor):
         value = self.value.construct(constructor)
+
+        if value is Nothing:
+            return constructor.builders[self.name]()
+
         if isinstance(value, tuple) and len(value) == 2 and \
             isinstance(value[0], list) and isinstance(value[0], dict):
             args, kwargs = value
@@ -202,6 +207,7 @@ class Tag(Element):
             args, kwargs = value, {}
         else:
             args, kwargs = [value], {}
+        print(f"constructing {self.name} with {args}, {kwargs}")
         return constructor.builders[self.name](*args, **kwargs)
 
     def dump(self, dumper: nip.dumper.Dumper):
@@ -212,11 +218,11 @@ class Args(Element):
     @classmethod
     def read(cls, stream: nip.stream.Stream, parser: nip.parser.Parser) -> Union[Args, None]:
         pos, indent = tokens.Indent.read(stream)
-        if indent is None:
+        if indent is None or indent <= stream.last_indent:
             return None
-        stream.move(pos)
 
         args: list = cls._read_list(stream, parser, indent)
+        stream.pos = 0
         kwargs: dict = cls._read_dict(stream, parser, indent)
 
         if not args and not kwargs:
@@ -226,9 +232,11 @@ class Args(Element):
     @classmethod
     def _read_list(cls, stream: nip.stream.Stream, parser: nip.parser.Parser,
                    start_indent: int) -> list:
-        indent = start_indent
+        pos, indent = tokens.Indent.read(stream)
         current_list = []
         while stream and indent == start_indent:
+            stream.move(pos)
+            stream.last_indent = indent
             item = cls._read_list_item(stream, parser)
             if not item:
                 break
@@ -238,8 +246,6 @@ class Args(Element):
                 break
 
             pos, indent = tokens.Indent.read(stream)
-            if indent == start_indent:
-                stream.move(pos)
 
         return current_list
 
@@ -258,10 +264,12 @@ class Args(Element):
     @classmethod
     def _read_dict(cls, stream: nip.stream.Stream, parser: nip.parser.Parser,
                    start_indent: int) -> dict:
-        indent = start_indent
+        pos, indent = tokens.Indent.read(stream)
 
         current_dict = OrderedDict()
         while stream and indent == start_indent:
+            stream.move(pos)
+            stream.last_indent = indent
             key, value = cls._read_dict_pair(stream, parser)
             if not key:
                 break
@@ -271,8 +279,6 @@ class Args(Element):
                 break
 
             pos, indent = tokens.Indent.read(stream)
-            if indent == start_indent:
-                stream.move(pos)
 
         return current_dict
 
@@ -397,4 +403,20 @@ class InlinePython(Element):
         return eval(self.value)
 
     def dump(self, dumper: nip.dumper.Dumper):
-        return f"`self.value`"
+        return f"`{self.value}`"
+
+
+class Nothing(Element):
+    @classmethod
+    def read(cls, stream: nip.stream.Stream, parser: nip.parser.Parser) -> Union[Nothing, None]:
+        pos, indent = tokens.Indent.read(stream)
+        if indent is None:
+            return None
+        if indent <= stream.last_indent:
+            return Nothing('nothing')
+
+    def construct(self, constructor: nip.constructor.Constructor):
+        return Nothing
+
+    def dump(self, dumper: nip.dumper.Dumper):
+        return ""
