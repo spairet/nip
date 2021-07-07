@@ -46,13 +46,15 @@ class Constructor:
 
 
 class ConstructorError(Exception):
-    def __init__(self, element):
+    def __init__(self, element, args, kwargs):
         self.cls = type(element).__name__
         self.name = element.name
-        self.value = element.value
+        self.args = args
+        self.kwargs = kwargs
 
     def __str__(self):
-        return f"Unable to construct {self.cls}: {self.name} with {self.value}"
+        return f"Unable to construct {self.cls} '{self.name}' with args:{self.args} and " \
+               f"kwargs:{self.kwargs}"
 
 
 # mb: add meta for auto detecting this class as YAP-builder

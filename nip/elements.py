@@ -193,21 +193,18 @@ class Tag(Element):
         return Tag(name, value)
 
     def construct(self, constructor: nip.constructor.Constructor):
-        value = self.value.construct(constructor)
-
-        if value is Nothing:
-            return constructor.builders[self.name]()
-
-        if isinstance(value, tuple) and len(value) == 2 and \
-            isinstance(value[0], list) and isinstance(value[0], dict):
-            args, kwargs = value
-        elif isinstance(value, dict):
-            args, kwargs = [], value
-        elif isinstance(value, list):
-            args, kwargs = value, {}
+        if isinstance(self.value, Args):
+            args, kwargs = self.value.construct(constructor, always_pair=True)
         else:
-            args, kwargs = [value], {}
-        return constructor.builders[self.name](*args, **kwargs)
+            value = self.value.construct(constructor)
+            if value is Nothing:
+                return constructor.builders[self.name]()
+            else:
+                args, kwargs = [value], {}
+        try:
+            return constructor.builders[self.name](*args, **kwargs)
+        except:
+            raise nip.constructor.ConstructorError(self, args, kwargs)
 
     def dump(self, dumper: nip.dumper.Dumper):
         return f"!{self.name} " + self.value.dump(dumper)
