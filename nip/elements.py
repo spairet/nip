@@ -91,6 +91,7 @@ class Value(Element):
     @classmethod
     def read(cls, stream: nip.stream.Stream, parser: nip.parser.Parser) -> Value:
         return cls._read_token(tokens.Number, stream) or \
+               cls._read_token(tokens.Bool, stream) or \
                cls._read_token(tokens.String, stream) or \
                cls._read_token(tokens.List, stream) or \
                cls._read_token(tokens.Dict, stream)
