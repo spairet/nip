@@ -27,7 +27,7 @@ class TokenError(Exception):
 class Number(Token):
     @staticmethod
     def read(stream: Stream) -> Tuple[int, Union[int, float]]:
-        string = stream[:]
+        string = stream[:].strip()
         pos = len(string)
         value = None
         for t in (int, float):
@@ -45,7 +45,7 @@ class Number(Token):
 class Bool(Token):
     @staticmethod
     def read(stream: Stream) -> Tuple[int, bool]:
-        string = stream[:]
+        string = stream[:].strip()
         pos = len(string)
         if string in ['true', 'True', 'yes']:
             return pos, True
@@ -53,6 +53,11 @@ class Bool(Token):
             return pos, False
         return 0, False
 
+
+# class NoneType(Token):
+#     @staticmethod
+#     def read(stream: Stream) -> Tuple[int, Any]:
+#         string = stream[:strip]
 
 class String(Token):
     @staticmethod
@@ -84,7 +89,8 @@ class Name(Token):
         if not stream[pos].isalpha():
             return 0, ''
 
-        while stream[pos].isalnum() or stream[pos] == '_':
+        while stream[pos].isalnum() or stream[pos] == '_' or \
+                stream[pos] == '.':
             pos += 1
 
         return pos, stream[:pos]

@@ -13,6 +13,6 @@ other:
   main: *main
   list:
     - 1
-    - 2
+    - true
     -
       abra: @ ["cadabra", "ababra", "avocado"]

@@ -9,6 +9,6 @@ other:
   main: *main
   list: 
     - 1
-    - 2
+    - True
     - 
       abra: cadabra
