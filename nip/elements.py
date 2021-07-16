@@ -351,7 +351,7 @@ class Iter(Element):
     @classmethod
     def read(cls, stream: nip.stream.Stream, parser: nip.parser.Parser) -> Union[Iter, None]:
         pos, op = tokens.Operator.read(stream)
-        if pos > 0 and (op == '@'):  # mb: other operator?
+        if pos > 0 and (op == '@'):
             stream.move(pos)
         else:
             return None

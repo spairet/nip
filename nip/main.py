@@ -66,7 +66,7 @@ def load(path: Union[str, Path], always_iter: bool = False) -> Union[Any, Iterab
     """
     config = parse(path, always_iter)
 
-    if isinstance(config, Iterable) or always_iter:
+    if isinstance(config, Iterable):
         return _iter_load(config)
 
     return construct(config)

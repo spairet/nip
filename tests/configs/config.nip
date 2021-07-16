@@ -10,7 +10,7 @@ main: &main
 
 
 other:
-  main: *main
+  main.other: *main
   list:
     - 1
     - true

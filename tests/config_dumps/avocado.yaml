@@ -6,7 +6,7 @@ main: &main
   second: [1, 2, 3]
   third: {'a': '123', '123': 'qweqwe'}
 other: 
-  main: *main
+  main.other: *main
   list: 
     - 1
     - True
