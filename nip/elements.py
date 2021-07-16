@@ -204,8 +204,8 @@ class Tag(Element):
                 args, kwargs = [value], {}
         try:
             return constructor.builders[self.name](*args, **kwargs)
-        except:
-            raise nip.constructor.ConstructorError(self, args, kwargs)
+        except Exception as e:
+            raise nip.constructor.ConstructorError(self, args, kwargs, e)
 
     def dump(self, dumper: nip.dumper.Dumper):
         return f"!{self.name} " + self.value.dump(dumper)
