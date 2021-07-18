@@ -435,10 +435,7 @@ class FString(Element):  # Includes f-string and r-string
 
     def construct(self, constructor: nip.constructor.Constructor):
         locals().update(constructor.vars)
-        string: str = self.value
-        for name, value in constructor.vars.items():
-            string = string.replace(f'{{{name}}}', str(value))
-        return string[1:-1]  # because we store quotes as well
+        return eval(f"f{self.value}")
 
     def dump(self, dumper: nip.dumper.Dumper):
         return f"f{self.value}"
