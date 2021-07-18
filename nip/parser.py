@@ -7,9 +7,10 @@ from .stream import Stream
 
 
 class Parser:  # mb: we don't need Parser itself. its just storage for links and tags. Hm...
-    def __init__(self):
+    def __init__(self, implicit_fstrings: bool = True):
         self.links = []
         self.iterators = []
+        self.implicit_fstrings = implicit_fstrings
 
     def parse(self, path: Union[str, Path]):
         path = Path(path)

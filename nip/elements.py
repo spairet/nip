@@ -424,7 +424,7 @@ class FString(Element):  # Includes f-string and r-string
     @classmethod
     def read(cls, stream: nip.stream.Stream, parser: nip.parser.Parser) -> \
             Union[FString, None]:
-        pos, string, t = tokens.PythonString.read(stream)
+        pos, string, t = tokens.PythonString.read(stream, parser.implicit_fstrings)
         if t == 'r':
             print("Warning: all strings in NIP are already python r-string. "
                   "You don't have to explicitly specify it.")

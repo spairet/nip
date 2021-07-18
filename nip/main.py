@@ -8,7 +8,8 @@ from .dumper import Dumper
 from . import elements
 
 
-def parse(path: Union[str, Path], always_iter: bool = False) -> \
+def parse(path: Union[str, Path], always_iter: bool = False,
+          implicit_fstrings: bool = True) -> \
         Union[elements.Element, Iterable[elements.Element]]:
     """Parses config providing Element tree
 
@@ -18,12 +19,14 @@ def parse(path: Union[str, Path], always_iter: bool = False) -> \
         path to config file
     always_iter: bool
         If True will always return iterator over configs.
+    implicit_fstrings: boot, default: True
+        If True, all quoted strings will be treated as python f-strings
 
     Returns
     -------
     tree: Element or Iterable[Element]
     """
-    parser = Parser()
+    parser = Parser(implicit_fstrings=implicit_fstrings)
     tree = parser.parse(path)
     if parser.has_iterators() or always_iter:
         return IterParser(parser).iter_configs(tree)

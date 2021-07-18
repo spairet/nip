@@ -172,8 +172,12 @@ class InlinePython(Token):
 
 class PythonString(Token):
     @classmethod
-    def read(cls, stream: Stream) -> Tuple[int, str, str]:
+    def read(cls, stream: Stream, implicit_fstrings=False) -> Tuple[int, str, str]:
         string = stream[:].strip()
+        if implicit_fstrings and string[0] in "\"\'":
+            if string[-1] != string[0]:
+                raise TokenError(stream, "Not closed f-string")
+            return len(string), string, 'f'
         if string[0] == 'f' and string[1] in "\"\'":
             if string[-1] != string[1]:
                 raise TokenError(stream, "Not closed f-string")
