@@ -1,0 +1,4 @@
+first_name: &first_name Ilya
+second_name: &second_name Vasiliev
+
+call: f"Your highness the great and beautiful lord, {first_name} {second_name}"

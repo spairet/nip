@@ -77,6 +77,7 @@ class RightValue(Element):
                 Tag.read(stream, parser) or \
                 Iter.read(stream, parser) or \
                 Args.read(stream, parser) or \
+                FString.read(stream, parser) or \
                 Value.read(stream, parser) or \
                 InlinePython.read(stream, parser) or \
                 Nothing.read(stream, parser)
@@ -410,10 +411,37 @@ class Nothing(Element):
         if indent is None:
             return None
         if indent <= stream.last_indent:
-            return Nothing('nothing')
+            return Nothing()
 
     def construct(self, constructor: nip.constructor.Constructor):
         return Nothing
 
     def dump(self, dumper: nip.dumper.Dumper):
         return ""
+
+
+class FString(Element):  # Includes f-string and r-string
+    @classmethod
+    def read(cls, stream: nip.stream.Stream, parser: nip.parser.Parser) -> \
+            Union[FString, None]:
+        pos, string, t = tokens.PythonString.read(stream)
+        if t == 'r':
+            print("Warning: all strings in NIP are already python r-string. "
+                  "You don't have to explicitly specify it.")
+        if pos > 0:
+            stream.move(pos)
+            return FString(value=string)
+        return None
+
+    def construct(self, constructor: nip.constructor.Constructor):
+        locals().update(constructor.vars)
+        string: str = self.value
+        for name, value in constructor.vars.items():
+            string = string.replace(f'{{{name}}}', str(value))
+        return string[1:-1]  # because we store quotes as well
+
+    def dump(self, dumper: nip.dumper.Dumper):
+        return f"f{self.value}"
+
+    def to_python(self):
+        return f"f{self.value}"
