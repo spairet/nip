@@ -77,6 +77,7 @@ class RightValue(Element):
                 Tag.read(stream, parser) or \
                 Iter.read(stream, parser) or \
                 Args.read(stream, parser) or \
+                FString.read(stream, parser) or \
                 Value.read(stream, parser) or \
                 InlinePython.read(stream, parser) or \
                 Nothing.read(stream, parser)
@@ -204,8 +205,8 @@ class Tag(Element):
                 args, kwargs = [value], {}
         try:
             return constructor.builders[self.name](*args, **kwargs)
-        except:
-            raise nip.constructor.ConstructorError(self, args, kwargs)
+        except Exception as e:
+            raise nip.constructor.ConstructorError(self, args, kwargs, e)
 
     def dump(self, dumper: nip.dumper.Dumper):
         return f"!{self.name} " + self.value.dump(dumper)
@@ -351,7 +352,7 @@ class Iter(Element):
     @classmethod
     def read(cls, stream: nip.stream.Stream, parser: nip.parser.Parser) -> Union[Iter, None]:
         pos, op = tokens.Operator.read(stream)
-        if pos > 0 and (op == '@'):  # mb: other operator?
+        if pos > 0 and (op == '@'):
             stream.move(pos)
         else:
             return None
@@ -410,10 +411,34 @@ class Nothing(Element):
         if indent is None:
             return None
         if indent <= stream.last_indent:
-            return Nothing('nothing')
+            return Nothing()
 
     def construct(self, constructor: nip.constructor.Constructor):
         return Nothing
 
     def dump(self, dumper: nip.dumper.Dumper):
         return ""
+
+
+class FString(Element):  # Includes f-string and r-string
+    @classmethod
+    def read(cls, stream: nip.stream.Stream, parser: nip.parser.Parser) -> \
+            Union[FString, None]:
+        pos, string, t = tokens.PythonString.read(stream, parser.implicit_fstrings)
+        if t == 'r':
+            print("Warning: all strings in NIP are already python r-string. "
+                  "You don't have to explicitly specify it.")
+        if pos > 0:
+            stream.move(pos)
+            return FString(value=string)
+        return None
+
+    def construct(self, constructor: nip.constructor.Constructor):
+        locals().update(constructor.vars)
+        return eval(f"f{self.value}")
+
+    def dump(self, dumper: nip.dumper.Dumper):
+        return f"f{self.value}"
+
+    def to_python(self):
+        return f"f{self.value}"

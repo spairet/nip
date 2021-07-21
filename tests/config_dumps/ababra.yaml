@@ -2,13 +2,13 @@
 main: &main 
   first: 
     in1: "11"
-    in2: 12.5
+    in2: &float 12.5
   second: [1, 2, 3]
   third: {'a': '123', '123': 'qweqwe'}
 other: 
-  main: *main
+  main.other: *main
   list: 
-    - 1
-    - 2
+    - f"this is float value {float}"
+    - True
     - 
       abra: ababra

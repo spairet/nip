@@ -15,7 +15,7 @@ print(result)
 
 
 # Parsing and saving config with iterators:
-configs = parse("configs/config.yaml")
+configs = parse("configs/config.nip")
 for config in configs:
     # get some staff from the deep
     filename = "config_dumps/" + config['other']['list'][2]['abra'].to_python() + ".yaml"
@@ -27,7 +27,7 @@ for config in configs:
 tree = parse("configs/simple_tag_config.yaml")
 print(tree.to_python())
 
-configs = next(parse("configs/config.yaml"))  # get first config
+configs = next(parse("configs/config.nip"))  # get first config
 print(configs['other'])
 print(configs['other'].to_python())
 

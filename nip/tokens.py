@@ -5,7 +5,7 @@ from .stream import Stream
 from typing import Tuple, Any, Union
 
 
-# ToDo: tokens takes parser
+# mb: tokens takes parser
 class Token(ABC):
     """Abstract of token reader"""
     @staticmethod
@@ -27,8 +27,7 @@ class TokenError(Exception):
 class Number(Token):
     @staticmethod
     def read(stream: Stream) -> Tuple[int, Union[int, float]]:
-        string = stream[:]
-        pos = len(string)
+        string = stream[:].strip()
         value = None
         for t in (int, float):
             try:
@@ -37,7 +36,7 @@ class Number(Token):
             except:
                 pass
         if value is not None:
-            return pos, value
+            return len(string), value
         else:
             return 0, 0
 
@@ -45,14 +44,18 @@ class Number(Token):
 class Bool(Token):
     @staticmethod
     def read(stream: Stream) -> Tuple[int, bool]:
-        string = stream[:]
-        pos = len(string)
+        string = stream[:].strip()
         if string in ['true', 'True', 'yes']:
-            return pos, True
+            return len(string), True
         if string in ["false", 'False', 'no']:
-            return pos, False
+            return len(string), False
         return 0, False
 
+
+# class NoneType(Token):
+#     @staticmethod
+#     def read(stream: Stream) -> Tuple[int, Any]:
+#         string = stream[:strip]
 
 class String(Token):
     @staticmethod
@@ -84,7 +87,8 @@ class Name(Token):
         if not stream[pos].isalpha():
             return 0, ''
 
-        while stream[pos].isalnum() or stream[pos] == '_':
+        while stream[pos].isalnum() or stream[pos] == '_' or \
+                stream[pos] == '.':
             pos += 1
 
         return pos, stream[:pos]
@@ -164,3 +168,22 @@ class InlinePython(Token):
             raise TokenError(stream, 'Inline python string was not clothed')
         pos += 1
         return pos, stream[1:pos - 1]
+
+
+class PythonString(Token):
+    @classmethod
+    def read(cls, stream: Stream, implicit_fstrings=False) -> Tuple[int, str, str]:
+        string = stream[:].strip()
+        if implicit_fstrings and string[0] in "\"\'":
+            if string[-1] != string[0]:
+                raise TokenError(stream, "Not closed f-string")
+            return len(string), string, 'f'
+        if string[0] == 'f' and string[1] in "\"\'":
+            if string[-1] != string[1]:
+                raise TokenError(stream, "Not closed f-string")
+            return len(string), string[1:], 'f'
+        if string[0] == 'r' and string[1] in "\"\'":
+            if string[-1] != string[1]:
+                raise TokenError(stream, "Not closed r-string")
+            return len(string), string[1:], 'r'
+        return 0, "", ''
