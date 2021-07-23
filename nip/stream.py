@@ -1,54 +1,59 @@
+import nip.tokens as tokens
+
 from copy import copy
 from typing import Union
 
+from nip.utils import get_subclasses
+
 
 class Stream:
-    # mb: do move in token reading if it is performed.
-    # mb: add read_token method to stream
-    # mb: add read_name, read_string, etc. methods to stream
-    def __init__(self, sstream: str, start_pos: int = 0):
-        self.lines = sstream.split("\n")
-        self.lines = [line for line in self.lines if len(line) > 0]
-        self.pos = start_pos
-        self.n = 0
-        self.last_indent = -1
+    def __init__(self, sstream: str):
+        self.lines = self._tokenize(sstream)
 
-    def __getitem__(self, item) -> Union[str, None]:
-        if isinstance(item, int):
-            if self.pos + item >= len(self.lines[self.n]):
-                return ''
-            return self.lines[self.n][self.pos + item]
-        elif isinstance(item, slice):
-            start = (item.start or 0) + self.pos
-            stop = None if item.stop is None else item.stop + self.pos
-            item = slice(start, stop, item.step)
-            return self.lines[self.n][item]
-        else:
-            raise IndexError("Unexpected index")
+    @staticmethod
+    def _tokenize(sstream: str):
+        lines = []
+        for i, line in enumerate(sstream.split("\n")):
+            lines.append(list())
+            if line.isspace():
+                continue
+            pos = 0
+            while pos < len(line):
+                while line[pos].isspace():
+                    pos += 1
+                try:
+                    length, token = Stream._read_token(line[pos:])
+                except tokens.TokenError as e:
+                    raise StreamError(i, pos, str(e))
+                if token is None:
+                    raise StreamError(i, pos, "Unable to read any token")
+                lines[-1].append((i, pos, token))
+                pos += length
+        return lines
 
-    def move(self, shift=0):
-        self.pos += shift
+    @staticmethod
+    def _read_token(string):
+        classes = [
+            tokens.InlinePython,
+            tokens.List,
+            tokens.Dict,
+            tokens.Operator,
+            tokens.Number,
+            tokens.String
+        ]
 
-        # read out spaces
-        while self.pos < len(self.lines[self.n]) and \
-                self.lines[self.n][self.pos].isspace():
-            self.pos += 1
+        for cls in classes:
+            read_symbols, token = cls.read(string)
+            if token:
+                return read_symbols, token
+        return 0, None
 
-        if self.pos == len(self.lines[self.n]) or \
-                self.lines[self.n][self.pos] == '#':
-            self.n += 1
-            self.pos = 0
 
-        if not self:
-            return
-        # skip empty lines
-        while self and (self.lines[self.n].isspace() or self.lines[self.n].strip()[0]) == '#':
-            self.n += 1
+class StreamError(Exception):
+    def __init__(self, line, position, msg: str):
+        self.line = line
+        self.pos = position
+        self.msg = msg
 
-    def __bool__(self):
-        return self.n < len(self.lines)
-
-    def __add__(self, shift: int):  # ToDo: do we even need this?
-        new_stream = copy(self)  # ToDo: check how does ot work
-        new_stream.move(shift)
-        return new_stream
+    def __str__(self):
+        return f"{self.line}:{self.pos}: {self.msg}"
