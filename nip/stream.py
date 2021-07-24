@@ -1,17 +1,16 @@
 import nip.tokens as tokens
 
-from copy import copy
 from typing import Union
-
-from nip.utils import get_subclasses
 
 
 class Stream:
     def __init__(self, sstream: str):
         self.lines = self._tokenize(sstream)
+        self.n = 0
+        self.pos = 0
 
     @staticmethod
-    def _tokenize(sstream: str):
+    def _tokenize(sstream):
         lines = []
         for i, line in enumerate(sstream.split("\n")):
             lines.append(list())
@@ -27,7 +26,8 @@ class Stream:
                     raise StreamError(i, pos, str(e))
                 if token is None:
                     raise StreamError(i, pos, "Unable to read any token")
-                lines[-1].append((i, pos, token))
+                token.set_position(i, pos)
+                lines[-1].append(token)
                 pos += length
         return lines
 
@@ -39,6 +39,7 @@ class Stream:
             tokens.Dict,
             tokens.Operator,
             tokens.Number,
+            tokens.PythonString,  # ToDo: implicit fstrings?
             tokens.String
         ]
 
@@ -47,6 +48,21 @@ class Stream:
             if token:
                 return read_symbols, token
         return 0, None
+
+    def __getitem__(self, item: int) -> Union[None, tokens.Token]:
+        if self.pos + item < len(self.lines[self.n]):
+            return self.lines[self.n][self.pos + item]
+        else:
+            return None
+
+    def move(self, n_tokens: int):  # move only in the line
+        self.pos += n_tokens
+        if self.pos >= len(self.lines[self.n]):
+            self.n += 1
+            self.pos = 0
+
+    def __bool__(self):
+        return self.n < len(self.lines)
 
 
 class StreamError(Exception):

@@ -16,6 +16,17 @@ class Token(ABC):
     def read(stream: str) -> Tuple[int, Any]:
         pass
 
+    def set_position(self, line, pos):
+        self.line = line
+        self.pos = pos
+
+    def __eq__(self, other: Token):
+        return self.__class__ == other.__class__ and self.value == other.value
+
+    @property
+    def name(self):
+        return self.__class__.__name__
+
 
 class TokenError(Exception):
     def __init__(self, msg: str):
@@ -59,7 +70,7 @@ class Bool(Token):
 #         string = stream[:strip]
 
 class String(Token):
-    stop_operators = [': ']  # mb: all operators should stop string?
+    stop_operators = [': ']
 
     @staticmethod
     def read(stream: str) -> Tuple[int, Union[None, String]]:
@@ -78,7 +89,7 @@ class String(Token):
             return pos, String(stream[1:pos - 1])
 
         pos = len(stream)
-        for op in String.stop_operators:
+        for op in Operator.operators: # mb: not all operators stop string?
             found_pos = stream.find(op)
             if found_pos >= 0:
                 pos = min(pos, found_pos)
@@ -90,16 +101,16 @@ class String(Token):
 
 # class Name(Token):
 #     @staticmethod
-#     def read(stream: str) -> Tuple[int, str]:
+#     def read(stream: str) -> Tuple[int, Union[None, Name]]:
 #         pos = 0
 #         if not stream[pos].isalpha():
-#             return 0, ''
+#             return 0, None
 #
 #         while stream[pos].isalnum() or stream[pos] == '_' or \
 #                 stream[pos] == '.':
 #             pos += 1
 #
-#         return pos, stream[:pos]
+#         return pos, Name(stream[:pos])
 
 
 class Operator(Token):

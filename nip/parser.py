@@ -11,6 +11,7 @@ class Parser:  # mb: we don't need Parser itself. its just storage for links and
         self.links = []
         self.iterators = []
         self.implicit_fstrings = implicit_fstrings
+        self.last_indent = -1
 
     def parse(self, path: Union[str, Path]):
         path = Path(path)
@@ -32,9 +33,9 @@ class Parser:  # mb: we don't need Parser itself. its just storage for links and
 
 
 class ParserError(Exception):  # ToDo: currently blank lines skipped thus printed line mb wrong
-    def __init__(self, stream: Stream, msg: str):
-        self.line = stream.n
-        self.pos = stream.pos
+    def __init__(self, line, pos, msg: str):
+        self.line = line
+        self.pos = pos
         self.msg = msg
 
     def __str__(self):
