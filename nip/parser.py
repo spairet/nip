@@ -25,7 +25,6 @@ class Parser:  # mb: we don't need Parser itself. its just storage for links and
 
     def parse_string(self, string):
         stream = Stream(string)  # mb: add stream to parser and log errors more convenient
-        stream.move()
         return elements.Document.read(stream, self)
 
     def has_iterators(self) -> bool:
@@ -33,9 +32,9 @@ class Parser:  # mb: we don't need Parser itself. its just storage for links and
 
 
 class ParserError(Exception):  # ToDo: currently blank lines skipped thus printed line mb wrong
-    def __init__(self, line, pos, msg: str):
-        self.line = line
-        self.pos = pos
+    def __init__(self, stream: Stream, msg: str):
+        self.line = stream[0].line
+        self.pos = stream[0].pos
         self.msg = msg
 
     def __str__(self):

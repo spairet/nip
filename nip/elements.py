@@ -48,12 +48,11 @@ class Document(Element):  # ToDo: add multi document support
 
     @classmethod
     def _read_name(cls, stream: nip.stream.Stream):
-        if stream[0] != tokens.Operator('---'):
+        read_tokens = stream.peek(tokens.Operator('---'), tokens.String)
+        if read_tokens is None:
             return None
-        if not isinstance(stream[1], tokens.String):
-            return None
-        name = stream[1].value
-        stream.move(2)
+        name = read_tokens[1].value
+        stream.step()
         return name
 
     def dump(self, dumper: nip.dumper.Dumper):
@@ -82,16 +81,19 @@ class RightValue(Element):
 class Value(Element):
     @classmethod
     def read(cls, stream: nip.stream.Stream, parser: nip.parser.Parser) -> Union[None, Value]:
-        if isinstance(stream[0], (
-                tokens.Number,
-                tokens.Bool,
-                tokens.String,
-                tokens.List,
-                tokens.Dict)):
-            name = stream[0].name
-            value = stream[0].value
-            stream.move(1)
-            return Value(name, value)
+        tokens_list = [
+            tokens.Number,
+            tokens.Bool,
+            tokens.String,
+            tokens.List,
+            tokens.Dict
+        ]
+        for token in tokens_list:
+            read_tokens = stream.peek(token)
+            if read_tokens is not None:
+                stream.step()
+                return Value(read_tokens[0].name, read_tokens[0].value)
+
         return None
 
     def to_python(self):
@@ -109,13 +111,14 @@ class Value(Element):
 class LinkCreation(Element):
     @classmethod
     def read(cls, stream: nip.stream.Stream, parser: nip.parser.Parser) -> Union[Element, None]:
-        if stream[0] != tokens.Operator('&'):
+        read_tokens = stream.peek(tokens.Operator('&'), tokens.Name)
+        if read_tokens is None:
             return None
-        if not isinstance(stream[1], tokens.String):
-            raise nip.parser.ParserError(stream[1].line, stream[1].pos, "Wrong var creation")
+        # if not isinstance(stream[1], tokens.Name):
+        #     raise nip.parser.ParserError(stream, "Wrong var creation")  # mb: No good errors now =(
 
-        name = stream[1].value
-        stream.move(2)
+        name = read_tokens[1].value
+        stream.step()
 
         value = RightValue.read(stream, parser)
         parser.links.append(name)
@@ -133,15 +136,14 @@ class LinkCreation(Element):
 class Link(Element):
     @classmethod
     def read(cls, stream: nip.stream.Stream, parser: nip.parser.Parser) -> Union[Element, None]:
-        if stream[0] != tokens.Operator('*'):
+        read_tokens = stream.peek(tokens.Operator('*'), tokens.Name)
+        if read_tokens is None:
             return None
-        if not isinstance(stream[1], tokens.String):
-            raise nip.parser.ParserError(stream[1].line, stream[1].pos, "Wrong var usage")
 
-        name = stream[1].value
+        name = read_tokens[1].value
         if name not in parser.links:
-            nip.parser.ParserError(stream[1].line, stream[1].pos, "Link usage before assignment")
-        stream.move(2)
+            nip.parser.ParserError(stream, "Link usage before assignment")
+        stream.step()
 
         return Link(name)
 
@@ -158,12 +160,11 @@ class Link(Element):
 class Tag(Element):
     @classmethod
     def read(cls, stream: nip.stream.Stream, parser: nip.parser.Parser) -> Union[Tag, None]:
-        if stream[0] != tokens.Operator('!'):
+        read_tokens = stream.peek(tokens.Operator('!'), tokens.Name)
+        if read_tokens is None:
             return None
-        if not isinstance(stream[1], tokens.String):
-            raise nip.parser.ParserError(stream[1].line, stream[1].pos, "Wrong tag creation")
-        name = stream[1].value
-        stream.move(2)
+        name = read_tokens[1].value
+        stream.step()
 
         value = RightValue.read(stream, parser)
 
@@ -190,78 +191,53 @@ class Tag(Element):
 class Args(Element):
     @classmethod
     def read(cls, stream: nip.stream.Stream, parser: nip.parser.Parser) -> Union[Args, None]:
-        indent = stream[0].pos
-        if indent <= parser.last_indent:
+        start_indent = stream.pos
+        if start_indent <= parser.last_indent:
             return None
 
-        args: list = cls._read_list(stream, parser, indent)
-        kwargs: dict = cls._read_dict(stream, parser, indent)
+        args = []
+        kwargs = {}
+        while stream and stream.pos == start_indent:
+            parser.last_indent = start_indent
+
+            item = cls._read_list_item(stream, parser)
+            if item is not None:
+                args.append(item)
+                continue
+
+            key, value = cls._read_dict_pair(stream, parser)
+            if key is not None:
+                kwargs[key] = value
+                continue
+
+            break
 
         if not args and not kwargs:
-            raise nip.parser.ParserError(stream, "Error reading indented element")
+            return None
         return Args("args", (args, kwargs))
 
-    @classmethod
-    def _read_list(cls, stream: nip.stream.Stream, parser: nip.parser.Parser,
-                   start_indent: int) -> list:
-        current_list = []
-        while stream and stream[0].pos == start_indent:
-            stream.last_indent = start_indent
-            item = cls._read_list_item(stream, parser)
-            if not item:
-                break
-            current_list.append(item)
-
-            if not stream:
-                break
-
-        return current_list
 
     @classmethod
     def _read_list_item(cls, stream: nip.stream.Stream, parser: nip.parser.Parser) \
             -> Union[Element, None]:
-        if stream[0] != tokens.Operator('- '):
+        read_tokens = stream.peek(tokens.Operator('-'))
+        if read_tokens is None:
             return None
-        stream.move(1)
+        stream.step()
 
         value = RightValue.read(stream, parser)
 
         return value
 
     @classmethod
-    def _read_dict(cls, stream: nip.stream.Stream, parser: nip.parser.Parser,
-                   start_indent: int) -> dict:
-        current_dict = OrderedDict()
-        while stream and stream[0].pos == start_indent:
-            stream.last_indent = start_indent
-            key, value = cls._read_dict_pair(stream, parser)
-            if not key:
-                break
-            current_dict[key] = value
-
-            if not stream:
-                break
-
-        return current_dict
-
-    @classmethod
     def _read_dict_pair(cls, stream: nip.stream.Stream, parser: nip.parser.Parser) \
             -> Union[Tuple[str, Element], Tuple[None, None]]:
-        if not isinstance(stream[0], tokens.String):
+        read_tokens = stream.peek(tokens.String, tokens.Operator(':'))
+        if read_tokens is None:
             return None, None
-        if stream[1] != tokens.Operator(': '):
-            return None, None
-        name = stream[0].value
-        stream.move(1)
-        pos, key = tokens.Name.read(stream)
-        if not pos:
-            return None, None
-        stream.move(pos)
 
-        pos, op = tokens.Operator.read(stream)
-        if not pos or op != ':':
-            raise nip.parser.ParserError(stream, "Wrong dict pair assertion")
-        stream.move(pos)
+        key = read_tokens[0].value
+        stream.step()
 
         value = RightValue.read(stream, parser)
 
@@ -321,24 +297,15 @@ class Iter(Element):
 
     @classmethod
     def read(cls, stream: nip.stream.Stream, parser: nip.parser.Parser) -> Union[Iter, None]:
-        if stream[0] != tokens.Operator('@'):
+        read_tokens = stream.peek(tokens.Operator('@'), tokens.Name, tokens.List) or \
+                      stream.peek(tokens.Operator('@'), tokens.List)
+        if read_tokens is None:
             return None
-
-        if isinstance(stream[1], tokens.String):
-            name = stream[1].value
-            if not isinstance(stream[2], tokens.List):
-                raise nip.parser.ParserError(stream[1].line, stream[1].pos, "Wrong iter creation")
-            iter_list = stream[2].value
-            stream.move(3)
-            iterator = Iter(name, iter_list)
-
-        elif isinstance(stream[1], tokens.List):
-            iter_list = stream[2].value
-            stream.move(2)
-            iterator = Iter('', iter_list)
-
+        stream.step()
+        if len(read_tokens) == 2:
+            iterator = Iter('', read_tokens[1].value)
         else:
-            raise nip.parser.ParserError(stream[1].line, stream[1].pos, "Wrong iter creation (expected Name of List)")
+            iterator = Iter(read_tokens[1].value, read_tokens[2].value)
 
         parser.iterators.append(iterator)
         return iterator
@@ -350,7 +317,7 @@ class Iter(Element):
 
     def construct(self, constructor: nip.constructor.Constructor):
         if self.return_index == -1:
-            raise nip.constructor.ConstructorError("Iterator index was not specified by IterParser")
+            raise Exception("Iterator index was not specified by IterParser")
         return self.value[self.return_index]
 
     def dump(self, dumper: nip.dumper.Dumper):
@@ -363,11 +330,13 @@ class Iter(Element):
 
 class InlinePython(Element):
     @classmethod
-    def read(cls, stream: nip.stream.Stream, parser: nip.parser.Parser) -> Union[InlinePython, None]:
-        if not isinstance(stream[0], tokens.InlinePython):
+    def read(cls, stream: nip.stream.Stream, parser: nip.parser.Parser) -> \
+            Union[InlinePython, None]:
+        read_tokens = stream.peek(tokens.InlinePython)
+        if read_tokens is None:
             return None
-        exec_string = stream[0].value
-        stream.move(1)
+        stream.step()
+        exec_string = read_tokens[0].value
         return InlinePython(value=exec_string)
 
     def construct(self, constructor: nip.constructor.Constructor):
@@ -381,11 +350,11 @@ class InlinePython(Element):
 class Nothing(Element):
     @classmethod
     def read(cls, stream: nip.stream.Stream, parser: nip.parser.Parser) -> Union[Nothing, None]:
-        indent = stream[0].pos
+        indent = stream.pos
         # pos, indent = tokens.Indent.read(stream)
         # if indent is None:  # mb this should be specifically processed
         #     return None
-        if indent <= stream.last_indent:
+        if indent <= parser.last_indent:
             return Nothing()
 
     def construct(self, constructor: nip.constructor.Constructor):
@@ -399,10 +368,11 @@ class FString(Element):  # Includes f-string and r-string
     @classmethod
     def read(cls, stream: nip.stream.Stream, parser: nip.parser.Parser) -> \
             Union[FString, None]:
-        if not isinstance(stream[0], tokens.PythonString):
+        read_tokens = stream.peek(tokens.PythonString)
+        if read_tokens is None:
             return None
-        string, t = stream[0].value
-        stream.move(1)
+        stream.step()
+        string, t = read_tokens[0].value
         if t == 'r':
             print("Warning: all strings in NIP are already python r-string. "
                   "You don't have to explicitly specify it.")

@@ -13,7 +13,7 @@ class Token(ABC):
         
     @staticmethod
     @abstractmethod
-    def read(stream: str) -> Tuple[int, Any]:
+    def read(stream: str) -> Tuple[int, Union[None, Token]]:
         pass
 
     def set_position(self, line, pos):
@@ -70,13 +70,11 @@ class Bool(Token):
 #         string = stream[:strip]
 
 class String(Token):
-    stop_operators = [': ']
-
     @staticmethod
     def read(stream: str) -> Tuple[int, Union[None, String]]:
         for op in Operator.operators:
             if stream.startswith(op):
-                return 0, String("")
+                return 0, None
         pos = 0
         if stream[pos] in "\'\"":
             start_char = stream[pos]
@@ -99,22 +97,22 @@ class String(Token):
         return pos, String(stream[:pos].strip())
 
 
-# class Name(Token):
-#     @staticmethod
-#     def read(stream: str) -> Tuple[int, Union[None, Name]]:
-#         pos = 0
-#         if not stream[pos].isalpha():
-#             return 0, None
-#
-#         while stream[pos].isalnum() or stream[pos] == '_' or \
-#                 stream[pos] == '.':
-#             pos += 1
-#
-#         return pos, Name(stream[:pos])
+class Name(String):
+    @staticmethod
+    def read(stream: str) -> Tuple[int, Union[None, Name]]:
+        pos = 0
+        if not stream[pos].isalpha():
+            return 0, None
+
+        while pos < len(stream) and (
+                stream[pos].isalnum() or stream[pos] == '_' or stream[pos] == '.'):
+            pos += 1
+
+        return pos, Name(stream[:pos])
 
 
 class Operator(Token):
-    operators = ['@', '#', '&', '!', '- ', ': ', '*', '---']
+    operators = ['---', '@', '#', '&', '!', '-', ':', '*', '{', '}', '[', ']']
 
     @staticmethod
     def read(stream: str) -> Tuple[int, Union[None, Operator]]:
@@ -188,7 +186,7 @@ class InlinePython(Token):
 
 class PythonString(Token):
     @classmethod
-    def read(cls, stream: str, implicit_fstrings=False) -> \
+    def read(cls, stream: str, implicit_fstrings: bool = False) -> \
             Tuple[int, Union[None, PythonString]]:
         string = stream[:].strip()
         if implicit_fstrings and string[0] in "\"\'":
@@ -203,4 +201,4 @@ class PythonString(Token):
             if string[-1] != string[1]:
                 raise TokenError("Not closed r-string")
             return len(string), PythonString((string[1:], 'r'))
-        return 0, PythonString(("", ''))
+        return 0, None
