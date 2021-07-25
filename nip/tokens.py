@@ -112,7 +112,7 @@ class Name(String):
 
 
 class Operator(Token):
-    operators = ['---', '@', '#', '&', '!', '-', ':', '*', '{', '}', '[', ']']
+    operators = ['---', '@', '#', '&', '!', '- ', ': ', '*', '{', '}', '[', ']']
 
     @staticmethod
     def read(stream: str) -> Tuple[int, Union[None, Operator]]:

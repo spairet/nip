@@ -57,7 +57,7 @@ class Document(Element):  # ToDo: add multi document support
         return ''
 
     def dump(self, dumper: nip.dumper.Dumper):
-        return "--- " + self.value.dump(dumper)
+        return "--- " + self.name + " " + self.value.dump(dumper)
 
 
 class RightValue(Element):
@@ -221,7 +221,7 @@ class Args(Element):
     @classmethod
     def _read_list_item(cls, stream: nip.stream.Stream, parser: nip.parser.Parser) \
             -> Union[Element, None]:
-        read_tokens = stream.peek(tokens.Operator('-'))
+        read_tokens = stream.peek(tokens.Operator('- '))
         if read_tokens is None:
             return None
         stream.step()
@@ -233,7 +233,7 @@ class Args(Element):
     @classmethod
     def _read_dict_pair(cls, stream: nip.stream.Stream, parser: nip.parser.Parser) \
             -> Union[Tuple[str, Element], Tuple[None, None]]:
-        read_tokens = stream.peek(tokens.String, tokens.Operator(':'))
+        read_tokens = stream.peek(tokens.String, tokens.Operator(': '))
         if read_tokens is None:
             return None, None
 
