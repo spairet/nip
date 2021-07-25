@@ -40,29 +40,24 @@ class Stream:
             read_tokens.append(token)
             pos += length
 
-        self.last_read_pos = pos
+        self.last_peak_pos = pos
         return read_tokens
 
     def step(self):
-        self.pos = self.last_read_pos
-        if self.pos >= len(self.lines[self.n]) or self.lines[self.n][self.pos:].isspace():
+        self.pos = self.last_peak_pos
+        while self and (
+                self.pos >= len(self.lines[self.n]) or
+                self.lines[self.n][self.pos:].isspace() or
+                self.lines[self.n][self.pos:].strip()[0] == '#'
+                ):
             self.n += 1
             self.pos = 0
-
-        while self and (len(self.lines[self.n]) == 0 or self.lines[self.n].isspace()):
-            self.n += 1
 
         if not self:
             return
 
         while self.lines[self.n][self.pos].isspace():
             self.pos += 1
-
-    def move(self, n_tokens: int):  # move only in the line
-        self.pos += n_tokens
-        if self.pos >= len(self.lines[self.n]):
-            self.n += 1
-            self.pos = 0
 
     def __bool__(self):
         return self.n < len(self.lines)
