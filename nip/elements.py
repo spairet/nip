@@ -48,12 +48,13 @@ class Document(Element):  # ToDo: add multi document support
 
     @classmethod
     def _read_name(cls, stream: nip.stream.Stream):
-        read_tokens = stream.peek(tokens.Operator('---'), tokens.String)
-        if read_tokens is None:
-            return None
-        name = read_tokens[1].value
-        stream.step()
-        return name
+        read_tokens = stream.peek(tokens.Operator('---'), tokens.String) or \
+                      stream.peek(tokens.Operator('---'))
+        if read_tokens is not None:
+            stream.step()
+            if len(read_tokens) == 2:
+                return read_tokens[1].value
+        return ''
 
     def dump(self, dumper: nip.dumper.Dumper):
         return "--- " + self.value.dump(dumper)
@@ -352,6 +353,8 @@ class InlinePython(Element):
 class Nothing(Element):
     @classmethod
     def read(cls, stream: nip.stream.Stream, parser: nip.parser.Parser) -> Union[Nothing, None]:
+        if not stream:
+            return Nothing()
         if not stream.lines[stream.n][:stream.pos].isspace():
             return None
         indent = stream.pos

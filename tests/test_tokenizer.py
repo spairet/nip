@@ -12,6 +12,8 @@ path = "configs/config.nip"
 # # print(stream.lines)
 # print(stream[0])
 # print(parse(path))
-print(parse(path))
-for obj in load(path):
-    print(obj)
+# print(parse(path))
+# for obj in load(path):
+#     print(obj)
+
+print(load("config_dumps/cadabra.yaml"))

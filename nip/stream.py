@@ -11,6 +11,8 @@ class Stream:
         self.pos = 0
 
     def peek(self, *args: Union[tokens.Token, Type[tokens.Token]]):  # read several tokens from stream
+        if not self:
+            return None
         line = self.lines[self.n]
         pos = self.pos
         read_tokens = []
