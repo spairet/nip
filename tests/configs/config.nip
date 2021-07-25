@@ -15,4 +15,9 @@ other:
     - f"this is float value {float}"
     - true
     -
-      abra: @ ["cadabra", "ababra", "avocado"]
+    sdf:
+    - sfds:
+        abra: @ ["cadabra", "ababra", "avocado"]
+    - - nested value
+      - one more
+      - nested: dict

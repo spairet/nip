@@ -33,8 +33,8 @@ class Parser:  # mb: we don't need Parser itself. its just storage for links and
 
 class ParserError(Exception):  # ToDo: currently blank lines skipped thus printed line mb wrong
     def __init__(self, stream: Stream, msg: str):
-        self.line = stream[0].line
-        self.pos = stream[0].pos
+        self.line = stream.n
+        self.pos = stream.pos
         self.msg = msg
 
     def __str__(self):

@@ -12,3 +12,6 @@ other:
     - True
     - 
       abra: ababra
+    - 
+      - "nested value"
+      - "one more"

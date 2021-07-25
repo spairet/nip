@@ -12,3 +12,6 @@ other:
     - True
     - 
       abra: avocado
+    - 
+      - "nested value"
+      - "one more"

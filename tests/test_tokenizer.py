@@ -12,5 +12,6 @@ path = "configs/config.nip"
 # # print(stream.lines)
 # print(stream[0])
 # print(parse(path))
+print(parse(path))
 for obj in load(path):
     print(obj)

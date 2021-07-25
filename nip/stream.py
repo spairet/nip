@@ -10,49 +10,6 @@ class Stream:
         self.n = 0
         self.pos = 0
 
-    @staticmethod
-    def _tokenize(sstream):
-        lines = []
-        for i, line in enumerate(sstream.split("\n")):
-            if line.isspace() or len(line) == 0:
-                continue
-            lines.append(list())
-            pos = 0
-            while pos < len(line):
-                while line[pos].isspace():
-                    pos += 1
-                try:
-                    length, token = Stream._read_token(line[pos:])
-                except tokens.TokenError as e:
-                    raise StreamError(i, pos, str(e))
-                if token is None:
-                    raise StreamError(i, pos, "Unable to read any token")
-                token.set_position(i, pos)
-                lines[-1].append(token)
-                print(f"read {token.name} {token.value}, {i}, {pos}")
-                pos += length
-        return lines
-
-    @staticmethod
-    def _read_token(string):
-        classes = [
-            tokens.InlinePython,
-            tokens.List,
-            tokens.Dict,
-            tokens.Operator,
-            tokens.Number,
-            tokens.Bool,
-            tokens.PythonString,  # ToDo: implicit fstrings?
-            tokens.Name,
-            tokens.String
-        ]
-
-        for cls in classes:
-            read_symbols, token = cls.read(string)
-            if token:
-                return read_symbols, token
-        return 0, None
-
     def peek(self, *args: Union[tokens.Token, Type[tokens.Token]]):  # read several tokens from stream
         line = self.lines[self.n]
         pos = self.pos
@@ -86,7 +43,7 @@ class Stream:
 
     def step(self):
         self.pos = self.last_read_pos
-        if self.pos >= len(self.lines[self.n]):
+        if self.pos >= len(self.lines[self.n]) or self.lines[self.n][self.pos:].isspace():
             self.n += 1
             self.pos = 0
 
@@ -98,12 +55,6 @@ class Stream:
 
         while self.lines[self.n][self.pos].isspace():
             self.pos += 1
-
-    # def __getitem__(self, item: int) -> Union[None, tokens.Token]:
-    #     if self.pos + item < len(self.lines[self.n]):
-    #         return self.lines[self.n][self.pos + item]
-    #     else:
-    #         return None
 
     def move(self, n_tokens: int):  # move only in the line
         self.pos += n_tokens

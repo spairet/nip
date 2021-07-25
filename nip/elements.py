@@ -68,9 +68,9 @@ class RightValue(Element):
                 Iter.read(stream, parser) or \
                 Args.read(stream, parser) or \
                 FString.read(stream, parser) or \
-                Value.read(stream, parser) or \
+                Nothing.read(stream, parser) or \
                 InlinePython.read(stream, parser) or \
-                Nothing.read(stream, parser)
+                Value.read(stream, parser)
 
         if not value:
             raise nip.parser.ParserError(stream, "Wrong right value")
@@ -350,6 +350,8 @@ class InlinePython(Element):
 class Nothing(Element):
     @classmethod
     def read(cls, stream: nip.stream.Stream, parser: nip.parser.Parser) -> Union[Nothing, None]:
+        if not stream.lines[stream.n][:stream.pos].isspace():
+            return None
         indent = stream.pos
         # pos, indent = tokens.Indent.read(stream)
         # if indent is None:  # mb this should be specifically processed

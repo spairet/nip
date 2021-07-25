@@ -12,3 +12,6 @@ other:
     - True
     - 
       abra: cadabra
+    - 
+      - "nested value"
+      - "one more"
