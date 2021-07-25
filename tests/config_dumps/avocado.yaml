@@ -11,7 +11,12 @@ other:
     - f"this is float value {float}"
     - True
     - 
-      abra: avocado
+    - 
+      sfds: 
+        abra: avocado
     - 
       - "nested value"
       - "one more"
+      - 
+        nested: "dict"
+    sdf:

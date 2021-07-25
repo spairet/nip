@@ -280,13 +280,15 @@ class Args(Element):
             " "*dumper.indent + f"- {item.dump(dumper + dumper.default_shift)}"
             for item in self.value[0]
         ])
+        string = ('\n' if dumped_args else '') + dumped_args
 
         dumped_kwargs = '\n'.join([
             " "*dumper.indent + f"{key}: {value.dump(dumper + dumper.default_shift)}"
             for key, value in self.value[1].items()
         ])
+        string += ('\n' if dumped_kwargs else '') + dumped_kwargs
 
-        return '\n' + dumped_args + dumped_kwargs
+        return string
 
 
 class Iter(Element):
@@ -364,6 +366,9 @@ class Nothing(Element):
 
     def dump(self, dumper: nip.dumper.Dumper):
         return ""
+
+    def to_python(self):
+        return None
 
 
 class FString(Element):  # Includes f-string and r-string
