@@ -11,6 +11,7 @@ class Parser:  # mb: we don't need Parser itself. its just storage for links and
         self.links = []
         self.iterators = []
         self.implicit_fstrings = implicit_fstrings
+        self.last_indent = -1
 
     def parse(self, path: Union[str, Path]):
         path = Path(path)
@@ -24,7 +25,6 @@ class Parser:  # mb: we don't need Parser itself. its just storage for links and
 
     def parse_string(self, string):
         stream = Stream(string)  # mb: add stream to parser and log errors more convenient
-        stream.move()
         return elements.Document.read(stream, self)
 
     def has_iterators(self) -> bool:

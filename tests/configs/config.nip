@@ -3,7 +3,7 @@
 main: &main
   first:
     in1: "11"
-    in2: &float 12.5
+    in2: &float -12.5
   second: [1, 2, 3]
 
   third: {'a': "123", '123': "qweqwe"}
@@ -11,8 +11,14 @@ main: &main
 
 other:
   main.other: *main
-  list:
+  list:  # comment
     - f"this is float value {float}"
     - true
     -
-      abra: @ ["cadabra", "ababra", "avocado"]
+    # more comments
+    sdf:
+    - sfds:
+        abra: @ ["cadabra", "ababra", "avocado"]
+    - - nested value
+      - one more
+      - nested: dict

@@ -18,7 +18,8 @@ print(result)
 configs = parse("configs/config.nip")
 for config in configs:
     # get some staff from the deep
-    filename = "config_dumps/" + config['other']['list'][2]['abra'].to_python() + ".yaml"
+    print("3: ", config['other']['list'][3])
+    filename = "config_dumps/" + config['other']['list'][3]['sfds']['abra'].to_python() + ".yaml"
     print("Saving: ", filename)
     dump(filename, config)
 
