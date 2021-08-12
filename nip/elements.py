@@ -355,13 +355,11 @@ class Nothing(Element):
     def read(cls, stream: nip.stream.Stream, parser: nip.parser.Parser) -> Union[Nothing, None]:
         if not stream:
             return Nothing()
-        if not stream.lines[stream.n][:stream.pos].isspace():
-            return None
+
         indent = stream.pos
-        # pos, indent = tokens.Indent.read(stream)
-        # if indent is None:  # mb this should be specifically processed
-        #     return None
-        if indent <= parser.last_indent:
+        if stream.pos == 0 or (
+                stream.lines[stream.n][:stream.pos].isspace()
+                and indent <= parser.last_indent):
             return Nothing()
 
     def construct(self, constructor: nip.constructor.Constructor):

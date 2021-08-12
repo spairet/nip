@@ -7,7 +7,6 @@ class Stream:
     def __init__(self, sstream: str):
         self.lines = sstream.split("\n")
         self.lines = [line + ' ' for line in self.lines]
-        #self.lines = self._tokenize(sstream)
         self.n = 0
         self.pos = 0
 
