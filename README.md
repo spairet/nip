@@ -18,12 +18,12 @@ Everything currently presented in nip and future plans are discussable. Feel fre
 If you find any bugs or unexpected behaviour please report it with an attached config file.
 
 
-#### Future plans for realization
+#### To realize
 
-1. Multiline strings with """ operator (currently only single string lines are supported)
-2. Auto-wrapping everything in locals() with @nip
-5. \_\_init\_\_ wrapper for convenient object dumping (currently object dumping is not supported. only config dumping)
-6. Multi document parsing.
-8. List node as an iterable node (currently only simple python-lists are supported for iterators)
-9. python code inserts with in-scope
-10. strict parser: check typing and reloading dict keys
+- [ ] Multiline strings with """ operator (currently only single string lines are supported)
+- [x] Module auto-wrapping everything in locals() with @nip
+- [ ] \_\_init\_\_ wrapper for convenient object dumping (currently object dumping is not supported. only config dumping)
+- [ ] Multi document parsing.
+- [ ] List node as an iterable node (currently only simple python-lists are supported for iterators)
+- [x] python code inserts with in-scope \check
+- [ ] strict parser: check typing and reloading dict keys
