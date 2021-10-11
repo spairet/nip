@@ -70,4 +70,4 @@ class StreamError(Exception):
         self.msg = msg
 
     def __str__(self):
-        return f"{self.line}:{self.pos}: {self.msg}"
+        return f"{self.line + 1}:{self.pos}: {self.msg}"
