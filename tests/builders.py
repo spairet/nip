@@ -1,4 +1,4 @@
-from nip import nip
+from nip import nip, dumps
 
 
 @nip
@@ -39,3 +39,8 @@ def NoNipFunc(name):
 def show(*args, **kwargs):
     print('args:', args)
     print('kwargs:', kwargs)
+
+
+def main(param, config):
+    print(param)
+    print(dumps(config))
