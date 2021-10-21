@@ -10,7 +10,8 @@ from . import elements
 
 
 def parse(path: Union[str, Path], always_iter: bool = False,
-          implicit_fstrings: bool = True) -> \
+          implicit_fstrings: bool = True,
+          strict: bool = False) -> \
         Union[elements.Element, Iterable[elements.Element]]:
     """Parses config providing Element tree
 
@@ -21,41 +22,47 @@ def parse(path: Union[str, Path], always_iter: bool = False,
     always_iter: bool
         If True will always return iterator over configs.
     implicit_fstrings: boot, default: True
-        If True, all quoted strings will be treated as python f-strings
+        If True, all quoted strings will be treated as python f-strings.
+    strict:
+        It True, checks overwriting dict keys and positioning (`args` before `kwargs`).
 
     Returns
     -------
     tree: Element or Iterable[Element]
     """
-    parser = Parser(implicit_fstrings=implicit_fstrings)
+    parser = Parser(implicit_fstrings=implicit_fstrings, strict=strict)
     tree = parser.parse(path)
     if parser.has_iterators() or always_iter:
         return IterParser(parser).iter_configs(tree)
     return tree
 
 
-def construct(tree: elements.Element) -> Any:
+def construct(tree: elements.Element,
+              strict_typing: bool = False) -> Any:
     """Constructs python object based on config and known nip-objects
 
     Parameters
     ----------
     tree: Element
         Read config tree.
+    strict_typing:
+        If True, raises Exception when typing mismatch.
 
     Returns
     -------
     obj: Any
     """
-    constructor = Constructor()
+    constructor = Constructor(strict_typing=strict_typing)
     return constructor.construct(tree)
 
 
-def _iter_load(configs):  # Otherwise load() will always be an iterator
+def _iter_load(configs, strict_typing):  # Otherwise load() will always be an iterator
     for config in configs:
-        yield construct(config)
+        yield construct(config, strict_typing)
 
 
-def load(path: Union[str, Path], always_iter: bool = False) -> Union[Any, Iterable[Any]]:
+def load(path: Union[str, Path], always_iter: bool = False,
+         strict: bool = False) -> Union[Any, Iterable[Any]]:
     """Parses config and constructs python object
     Parameters
     ----------
@@ -63,6 +70,8 @@ def load(path: Union[str, Path], always_iter: bool = False) -> Union[Any, Iterab
         Path to config file
     always_iter: bool
         If True will always return iterator over configs.
+    strict_typing:
+        If True, raises Exception when typing mismatch or overwriting dict key.
 
     Returns
     -------
@@ -71,9 +80,9 @@ def load(path: Union[str, Path], always_iter: bool = False) -> Union[Any, Iterab
     config = parse(path, always_iter)
 
     if isinstance(config, Iterable):
-        return _iter_load(config)
+        return _iter_load(config, strict_typing)
 
-    return construct(config)
+    return construct(config, strict_typing)
 
 
 def dump(path: Union[str, Path], tree: elements.Element):

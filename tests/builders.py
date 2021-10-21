@@ -13,13 +13,13 @@ class SimpleClass:
 
 
 @nip("myfunc")
-def MySecretFunction(a, b=0, c=0):
+def MySecretFunction(a: int, b: int = 0, c: int = 0):
     return a + 2 * b + 3 * c
 
 
 @nip
 class MyClass:
-    def __init__(self, name, f):
+    def __init__(self, name: str, f: object):
         self.name = name
         self.f = f
 

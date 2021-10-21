@@ -1,0 +1,7 @@
+simple: !SimpleClass
+  name: "Hello"
+
+f: !myfunc
+  - 1
+  b: 2
+  d: 3

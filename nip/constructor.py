@@ -14,12 +14,14 @@ global_calls = {}  # history of object creations
 
 
 class Constructor:
-    def __init__(self, ignore_rewriting=False, load_builders=True):
+    def __init__(self, ignore_rewriting=False, load_builders=True,
+                 strict_typing=False):
         self.builders = {}
         self.ignore_rewriting = ignore_rewriting
         if load_builders:
             self.load_builders()
         self.vars = {}
+        self.strict_typing = strict_typing
 
     def construct(self, element):
         return element.construct(self)
