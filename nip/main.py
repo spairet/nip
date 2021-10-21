@@ -71,7 +71,7 @@ def load(path: Union[str, Path],
         Path to config file
     always_iter: bool
         If True will always return iterator over configs.
-    strict_typing:
+    strict:
         If True, raises Exception when typing mismatch or overwriting dict key.
 
     Returns
@@ -123,7 +123,8 @@ def _run_return(value, config, return_values, return_configs):
             return value, dumps(config)
 
 
-def _single_run(config: elements.Document, verbose, return_values, return_configs, config_parameter):
+def _single_run(config, verbose, return_values, return_configs, config_parameter,
+                strict):
     if verbose:
         print("=" * 20)
         print("Running config:")
@@ -151,28 +152,30 @@ def _single_run(config: elements.Document, verbose, return_values, return_config
                 return constructor.builders[tag.name](*args, **kwargs)
             except Exception as e:
                 raise ConstructorError(tag, args, kwargs, e)
-        constructor = Constructor()
+        constructor = Constructor(strict_typing=strict)
         value = tag_construct(config.value, constructor)
     else:
-        value = construct(config)
+        value = construct(config, strict_typing=strict)
 
     if verbose:
         print("----")
         print("Run value:")
         print(value)
 
-    return _run_return(value, config, return_values, return_configs, )
+    return _run_return(value, config, return_values, return_configs)
 
 
-def _iter_run(configs, verbose, return_values, return_configs, config_parameter):
+def _iter_run(configs, verbose, return_values, return_configs, config_parameter, strict):
     for config in configs:
-        run_return = _single_run(config, verbose, return_values, return_configs, config_parameter)
+        run_return = _single_run(config, verbose, return_values, return_configs,
+                                 config_parameter, strict)
         if run_return:
             yield run_return
 
 
 def run(path: Union[str, Path],
         verbose: bool = True,
+        strict: bool = False,
         return_values: bool = True,
         return_configs: bool = True,
         always_iter: bool = False,
@@ -186,6 +189,8 @@ def run(path: Union[str, Path],
         path to config to run.
     verbose: bool, optional
         Whether to print information about currently running experiment or not.
+    strict:
+        If True, raises Exception when typing mismatch or overwriting dict key.
     return_values: bool, optional
         Whether to return values of ran functions or not.
     return_configs: bool, optional
@@ -201,8 +206,9 @@ def run(path: Union[str, Path],
     value or config or (value, config): Any or str or (Any, str)
         returned values and configs of runs
     """
-    config = parse(path, always_iter=always_iter)
+    config = parse(path, always_iter=always_iter, strict=strict)
     if isinstance(config, Iterable):
-        return list(_iter_run(config, verbose, return_values, return_configs, config_parameter))  # mb iter?
+        return list(_iter_run(config, verbose, return_values, return_configs,
+                              config_parameter, strict))  # mb iter?
 
-    return _single_run(config, verbose, return_values, return_configs, config_parameter)
+    return _single_run(config, verbose, return_values, return_configs, config_parameter, strict)
