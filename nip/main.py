@@ -1,8 +1,9 @@
+import parser
 from typing import Union, Any, Iterable
 from pathlib import Path
 
 from .parser import Parser
-from .constructor import Constructor
+from .constructor import Constructor, ConstructorError
 from .iter_parser import IterParser
 from .dumper import Dumper
 from . import elements
@@ -112,26 +113,50 @@ def _run_return(value, config, return_values, return_configs):
             return value, dumps(config)
 
 
-def _single_run(config, verbose, return_values, return_configs):
+def _single_run(config: elements.Document, verbose, return_values, return_configs, config_parameter):
     if verbose:
         print("=" * 20)
         print("Running config:")
         print(dumps(config))
         print("----")
 
-    value = construct(config)
+    if config_parameter:
+        assert isinstance(config.value, elements.Tag)
+
+        def tag_construct(tag, constructor):  # copy of a tag construction code =(
+            if isinstance(tag.value, elements.Args):
+                args, kwargs = tag.value.construct(constructor, always_pair=True)
+            else:
+                value = tag.value.construct(constructor)
+                if value is elements.Nothing:
+                    args, kwargs = [], {}
+                else:
+                    args, kwargs = [value], {}
+            if config_parameter in kwargs:
+                raise RuntimeWarning(
+                    f"nip.run() was asked to add config parameter '{config_parameter}', "
+                    f"but it is already specified by the config. It will be overwritten.")
+            kwargs[config_parameter] = config  # adding the config
+            try:
+                return constructor.builders[tag.name](*args, **kwargs)
+            except Exception as e:
+                raise ConstructorError(tag, args, kwargs, e)
+        constructor = Constructor()
+        value = tag_construct(config.value, constructor)
+    else:
+        value = construct(config)
 
     if verbose:
         print("----")
         print("Run value:")
         print(value)
 
-    return _run_return(value, config, return_values, return_configs)
+    return _run_return(value, config, return_values, return_configs, )
 
 
-def _iter_run(configs, verbose, return_values, return_configs):
+def _iter_run(configs, verbose, return_values, return_configs, config_parameter):
     for config in configs:
-        run_return = _single_run(config, verbose, return_values, return_configs)
+        run_return = _single_run(config, verbose, return_values, return_configs, config_parameter)
         if run_return:
             yield run_return
 
@@ -140,7 +165,8 @@ def run(path: Union[str, Path],
         verbose: bool = True,
         return_values: bool = True,
         return_configs: bool = True,
-        always_iter: bool = False):
+        always_iter: bool = False,
+        config_parameter: Union[str, None] = None):
     """Runs config. Config should be declared with function to run as a tag for the Document.
     In case of iterable configs we will iterate over and run each of them.
 
@@ -153,9 +179,11 @@ def run(path: Union[str, Path],
     return_values: bool, optional
         Whether to return values of ran functions or not.
     return_configs: bool, optional
-        Whether to return config for ran function or not
+        Whether to return config for ran function or not.
     always_iter: bool, optional
-        Result will always be iterable
+        Result will always be iterable.
+    config_parameter: str, optional
+        If specified, parsed config will be passed to called function as a parameter with this name.
 
     Returns
     -------
@@ -165,6 +193,6 @@ def run(path: Union[str, Path],
     """
     config = parse(path, always_iter=always_iter)
     if isinstance(config, Iterable):
-        return list(_iter_run(config, verbose, return_values, return_configs))  # mb iter?
+        return list(_iter_run(config, verbose, return_values, return_configs, config_parameter))  # mb iter?
 
-    return _single_run(config, verbose, return_values, return_configs)
+    return _single_run(config, verbose, return_values, return_configs, config_parameter)
