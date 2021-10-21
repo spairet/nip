@@ -61,7 +61,8 @@ def _iter_load(configs, strict_typing):  # Otherwise load() will always be an it
         yield construct(config, strict_typing)
 
 
-def load(path: Union[str, Path], always_iter: bool = False,
+def load(path: Union[str, Path],
+         always_iter: bool = False,
          strict: bool = False) -> Union[Any, Iterable[Any]]:
     """Parses config and constructs python object
     Parameters
@@ -77,12 +78,12 @@ def load(path: Union[str, Path], always_iter: bool = False,
     -------
     obj: Any or Iterable[Any]
     """
-    config = parse(path, always_iter)
+    config = parse(path, always_iter, strict=strict)
 
     if isinstance(config, Iterable):
-        return _iter_load(config, strict_typing)
+        return _iter_load(config, strict)
 
-    return construct(config, strict_typing)
+    return construct(config, strict)
 
 
 def dump(path: Union[str, Path], tree: elements.Element):
