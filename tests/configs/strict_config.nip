@@ -1,7 +1,8 @@
-simple: !SimpleClass
+simple: &simple !SimpleClass
   name: "Hello"
 
 f: !myfunc
   - 1
+  #- *simple
   b: 2
-  d: 3
+  #d: 3

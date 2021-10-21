@@ -3,7 +3,7 @@ from nip import nip, dumps
 
 @nip
 class SimpleClass:
-    def __init__(self, name):
+    def __init__(self, name: str):
         self.name = name
 
     @nip("print_method")
