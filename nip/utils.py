@@ -30,19 +30,3 @@ def deep_equals(first: Union[Dict, List, Any], second: Union[Dict, List, Any]):
     else:
         return first == second
     return True
-
-
-def check_typing(func, args, kwargs):
-    signature = inspect.signature(func)
-    for arg, param in zip(args, signature.parameters.values()):
-        if param.annotation is inspect.Parameter.empty:
-            continue
-        typeguard.check_type(param.name, arg, param.annotation)
-
-    for name, value in kwargs.items():
-        if name not in signature.parameters:
-            continue  # handled by python
-        annotation = signature.parameters[name].annotation
-        if annotation is inspect.Parameter.empty:
-            continue
-        typeguard.check_type(name, value, annotation)

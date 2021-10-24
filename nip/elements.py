@@ -1,7 +1,7 @@
 """Contains all the elements of nip config files"""
 from __future__ import annotations
 
-import warnings
+import logging
 
 import nip.parser  # This import pattern because of cycle imports
 import nip.dumper
@@ -13,6 +13,7 @@ import nip.utils
 from abc import abstractmethod, ABC
 from typing import Any, Union, Tuple
 
+_LOGGER = logging.getLogger(__name__)
 
 class Element(ABC):
     """Base token for nip file"""
@@ -183,13 +184,13 @@ class Tag(Element):
             else:
                 args, kwargs = [value], {}
 
-        try:  # Check typing
-            nip.utils.check_typing(constructor.builders[self.name], args, kwargs)
-        except TypeError as e:
+        messages = nip.constructor.check_typing(constructor.builders[self.name], args, kwargs)
+        if len(messages) > 0:
             if constructor.strict_typing:
-                raise nip.constructor.ConstructorError(self, args, kwargs, e)
+                raise nip.constructor.ConstructorError(self, args, kwargs, "\n".join(messages))
             else:
-                warnings.warn(f"Typing mismatch while constructing {self.name}:\n{e}")
+                _LOGGER.warning(f"Typing mismatch while constructing {self.name}:\n" +
+                                "\n".join(messages))
 
         try:  # Try to construct
             return constructor.builders[self.name](*args, **kwargs)

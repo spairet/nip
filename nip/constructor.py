@@ -1,6 +1,8 @@
 # Constuctor of tagged objects
 import importlib
 import importlib.util
+import inspect
+import typeguard
 
 from typing import Callable, Optional, Union
 from types import FunctionType, ModuleType, BuiltinFunctionType
@@ -132,3 +134,30 @@ def wrap_module(module: Union[str, ModuleType], wrap_builtins=False):
         if isinstance(value, (type, FunctionType)) or \
                 wrap_builtins and isinstance(value, BuiltinFunctionType):
             nip(value)
+
+
+def check_typing(func, args, kwargs):
+    signature = inspect.signature(func)
+    messages = []
+    for arg, param in zip(args, signature.parameters.values()):
+        if param.annotation is inspect.Parameter.empty:
+            continue
+        try:
+            typeguard.check_type(param.name, arg, param.annotation)
+        except TypeError as e:
+            messages.append("- " + str(e))
+
+    for name, value in kwargs.items():
+        if name not in signature.parameters:
+            continue  # handled by python
+        annotation = signature.parameters[name].annotation
+        if annotation is inspect.Parameter.empty:
+            continue
+        try:
+            typeguard.check_type(name, value, annotation)
+        except TypeError as e:
+            messages.append("- " + str(e))
+
+    return messages
+
+
