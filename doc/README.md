@@ -25,15 +25,6 @@ Lets take a look at this config example.
 >also_main: *main
 >```
 
-Some differences from yaml:
-- Named list items are **forbidden** due to the uniformity and realization issues. So, this code will raise en exception:warning::
-    ```yaml
-    - nested_list
-      - 1
-      - 2
-    ```
-- Keys of inline dict should be quoted.
-
 _Note:_ **nip** is not extension sensitive, so feel free to change extension to `.yml` for syntax highlighting. **Nip** doesn't have its own highlighting yet :cry: 
 
 ### Main functions
@@ -64,7 +55,7 @@ def MyCoolFunc(a, b=2, c=3):
     return a + b * 2 + c * 3
 ```
 
-Now you are able to construct them with a config file using `!` operator:
+Now you are able to construct them with a config file using tag operator `!`. List or dict that lies under tagged node will be passed as args and kwargs to the fucntion or class.
 ```yaml
 class_object: !MyCoolClass
   question: Ultimate Question of Life, The Universe, and Everything
@@ -87,8 +78,6 @@ _Note:_ if you specify your wrapped objects in other `.py` file, you have to imp
 There is a number of features for this functionality:
 1. `@nip` decorator allows you to specify name for the object to be used in config file (`just_func` in the example)
 2. You can combine `args` and `kwargs` in the config. (`just_func` creation).
-
-    _Actually you are able to create this combined element anywhere in the config, and it will be loaded as a tuple of list and dict._
 3. You can  automatically wrap everything under module.
    Here are two variants of wrapping `source` module:
    ```python
@@ -139,7 +128,9 @@ will result in:
 {'a': {'const': 1, 'iter': 3}, 'b': {'a_copy': {'const': 1, 'iter': 3}, 'another_iter': 5}}
 {'a': {'const': 1, 'iter': 3}, 'b': {'a_copy': {'const': 1, 'iter': 3}, 'another_iter': 6}}
 ```
-_Note:_ All the iterators works with construction of your custom objects and using links in the config doesn't recreates them, as in the examples above.
+If you need to iterate some lists synchronously you can specify iter names: `@a [1, 2, 3]`. All the iterators with the same name will be iterated together. The order of iterators is determind by the alphabetic order of thier names.
+
+_Note:_ All the iterators works with construction of your custom objects only once and using links in the config doesn't recreates the objects. See above example to clarify.
 
 ### Additional features 
 There are some small but useful features also presented in **nip**:
@@ -181,6 +172,7 @@ There are some small but useful features also presented in **nip**:
    run('experiment_config.nip')
    ```
    This will result in running a number of experiments using generated configs. 
+4. Strict nip. Nip can check typing while constructing objects and keys overwriting in dicts. `strict` parameter of `load` function stands for it. By default only typing warnings are generated.
 
 
 Most of the functions mentioned in this short documentation have additional parameters, so feel free to look into the docstrings. :yum:
