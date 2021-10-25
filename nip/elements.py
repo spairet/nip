@@ -1,16 +1,19 @@
 """Contains all the elements of nip config files"""
 from __future__ import annotations
 
+import logging
+
 import nip.parser  # This import pattern because of cycle imports
 import nip.dumper
 import nip.constructor
 import nip.stream
 import nip.tokens as tokens
+import nip.utils
 
 from abc import abstractmethod, ABC
-from collections import OrderedDict
-from typing import Any, Type, Union, Tuple
+from typing import Any, Union, Tuple
 
+_LOGGER = logging.getLogger(__name__)
 
 class Element(ABC):
     """Base token for nip file"""
@@ -180,7 +183,16 @@ class Tag(Element):
                 return constructor.builders[self.name]()
             else:
                 args, kwargs = [value], {}
-        try:
+
+        messages = nip.constructor.check_typing(constructor.builders[self.name], args, kwargs)
+        if len(messages) > 0:
+            if constructor.strict_typing:
+                raise nip.constructor.ConstructorError(self, args, kwargs, "\n".join(messages))
+            else:
+                _LOGGER.warning(f"Typing mismatch while constructing {self.name}:\n" +
+                                "\n".join(messages))
+
+        try:  # Try to construct
             return constructor.builders[self.name](*args, **kwargs)
         except Exception as e:
             raise nip.constructor.ConstructorError(self, args, kwargs, e)
@@ -198,16 +210,26 @@ class Args(Element):
 
         args = []
         kwargs = {}
+        read_kwarg = False
         while stream and stream.pos == start_indent:
             parser.last_indent = start_indent
 
             item = cls._read_list_item(stream, parser)
             if item is not None:
+                if parser.strict and read_kwarg:
+                    raise nip.parser.ParserError(stream,
+                                                 "Positional argument after keyword argument "
+                                                 "is forbiddent in `strict` mode.")
                 args.append(item)
                 continue
 
             key, value = cls._read_dict_pair(stream, parser)
             if key is not None:
+                if parser.strict and key in kwargs:
+                    raise nip.parser.ParserError(stream,
+                                                 f"Dict key overwriting is forbidden in `strict` "
+                                                 f"mode. Overwritten key: '{key}'.")
+                read_kwarg = True
                 kwargs[key] = value
                 continue
 
@@ -216,7 +238,6 @@ class Args(Element):
         if not args and not kwargs:
             return None
         return Args("args", (args, kwargs))
-
 
     @classmethod
     def _read_list_item(cls, stream: nip.stream.Stream, parser: nip.parser.Parser) \

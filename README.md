@@ -21,9 +21,9 @@ If you find any bugs or unexpected behaviour please report it with an attached c
 #### To realize
 
 - [ ] Multiline strings with """ operator (currently only single string lines are supported)
-- [x] Module auto-wrapping everything in locals() with @nip
+- [x] Auto-wrapping everything inside module with @nip
 - [ ] \_\_init\_\_ wrapper for convenient object dumping (currently object dumping is not supported. only config dumping)
 - [ ] Multi document parsing.
 - [ ] List node as an iterable node (currently only simple python-lists are supported for iterators)
-- [x] python code inserts with in-scope \check
-- [ ] strict parser: check typing and reloading dict keys
+- [x] python code inserts with in-scope
+- [X] strict typing: check typing and reloading dict keys
