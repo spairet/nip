@@ -370,6 +370,9 @@ class InlinePython(Element):
     def dump(self, dumper: nip.dumper.Dumper):
         return f"`{self.value}`"
 
+    def to_python(self):
+        return f"`{self.value}`"
+
 
 class Nothing(Element):
     @classmethod
