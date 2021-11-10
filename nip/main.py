@@ -1,6 +1,6 @@
-import parser
-from typing import Union, Any, Iterable
+from typing import Union, Any, Iterable, Callable, Optional
 from pathlib import Path
+
 
 from .parser import Parser
 from .constructor import Constructor, ConstructorError
@@ -123,7 +123,7 @@ def _run_return(value, config, return_values, return_configs):
             return value, dumps(config)
 
 
-def _single_run(config, verbose, return_values, return_configs, config_parameter,
+def _single_run(config, func, verbose, return_values, return_configs, config_parameter,
                 strict):
     if verbose:
         print("=" * 20)
@@ -131,31 +131,25 @@ def _single_run(config, verbose, return_values, return_configs, config_parameter
         print(dumps(config))
         print("----")
 
-    if config_parameter:
-        assert isinstance(config.value, elements.Tag)
+    value = construct(config, strict_typing=strict)
+    if func is not None:
+        if isinstance(value, tuple) and isinstance(value[0], list) and isinstance(value[1], dict):
+            args, kwargs = value
+        elif isinstance(value, list):
+            args, kwargs = value, {}
+        elif isinstance(value, dict):
+            args, kwargs = [], value
+        else:
+            raise RuntimeError("Value constructed by the config cant be parsed as args and kwargs")
 
-        def tag_construct(tag, constructor):  # copy of a tag construction code =(
-            if isinstance(tag.value, elements.Args):
-                args, kwargs = tag.value.construct(constructor, always_pair=True)
-            else:
-                value = tag.value.construct(constructor)
-                if value is elements.Nothing:
-                    args, kwargs = [], {}
-                else:
-                    args, kwargs = [value], {}
+        if config_parameter:
             if config_parameter in kwargs:
                 raise RuntimeWarning(
                     f"nip.run() was asked to add config parameter '{config_parameter}', "
                     f"but it is already specified by the config. It will be overwritten.")
-            kwargs[config_parameter] = config  # adding the config
-            try:
-                return constructor.builders[tag.name](*args, **kwargs)
-            except Exception as e:
-                raise ConstructorError(tag, args, kwargs, e)
-        constructor = Constructor(strict_typing=strict)
-        value = tag_construct(config.value, constructor)
-    else:
-        value = construct(config, strict_typing=strict)
+            kwargs[config_parameter] = config
+
+        value = func(*args, **kwargs)
 
     if verbose:
         print("----")
@@ -165,21 +159,22 @@ def _single_run(config, verbose, return_values, return_configs, config_parameter
     return _run_return(value, config, return_values, return_configs)
 
 
-def _iter_run(configs, verbose, return_values, return_configs, config_parameter, strict):
+def _iter_run(configs, func, verbose, return_values, return_configs, config_parameter, strict):
     for config in configs:
-        run_return = _single_run(config, verbose, return_values, return_configs,
+        run_return = _single_run(config, func, verbose, return_values, return_configs,
                                  config_parameter, strict)
         if run_return:
             yield run_return
 
 
 def run(path: Union[str, Path],
+        func: Optional[Callable] = None,
         verbose: bool = True,
         strict: bool = False,
         return_values: bool = True,
         return_configs: bool = True,
         always_iter: bool = False,
-        config_parameter: Union[str, None] = None):
+        config_parameter: Optional[str] = None):
     """Runs config. Config should be declared with function to run as a tag for the Document.
     In case of iterable configs we will iterate over and run each of them.
 
@@ -187,6 +182,9 @@ def run(path: Union[str, Path],
     ----------
     path: str or Path
         path to config to run.
+    func:
+        Function to be called with loaded configs.
+        If not specified, config will be constructed as is.
     verbose: bool, optional
         Whether to print information about currently running experiment or not.
     strict:
@@ -199,6 +197,7 @@ def run(path: Union[str, Path],
         Result will always be iterable.
     config_parameter: str, optional
         If specified, parsed config will be passed to called function as a parameter with this name.
+        `func` parameter must be specified.
 
     Returns
     -------
@@ -206,9 +205,11 @@ def run(path: Union[str, Path],
     value or config or (value, config): Any or str or (Any, str)
         returned values and configs of runs
     """
+    assert config_parameter is None or config_parameter is not None and func is not None, \
+        "`config_parameter` can be used only with specified `func`"
     config = parse(path, always_iter=always_iter, strict=strict)
     if isinstance(config, Iterable):
         return list(_iter_run(config, verbose, return_values, return_configs,
                               config_parameter, strict))  # mb iter?
 
-    return _single_run(config, verbose, return_values, return_configs, config_parameter, strict)
+    return _single_run(config, func, verbose, return_values, return_configs, config_parameter, strict)
