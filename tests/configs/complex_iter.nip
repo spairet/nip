@@ -1,0 +1,18 @@
+main: &main
+  simple_list: 123
+  node_list: @ [1, 2, 3]
+#    - "qwe"
+#    - "123"
+#    - 23
+
+other_main: *main
+comples_iter: @a
+    - !SimpleClass
+      name: qweqwe
+    - !MyClass
+      name: "name"
+      f: 3
+    - !myfunc
+      - 1
+      - 2
+      c: 3

@@ -15,6 +15,7 @@ from typing import Any, Union, Tuple
 
 _LOGGER = logging.getLogger(__name__)
 
+
 class Element(ABC):
     """Base token for nip file"""
     def __init__(self, name: str = '', value: Any = None):
@@ -76,7 +77,7 @@ class RightValue(Element):
                 InlinePython.read(stream, parser) or \
                 Value.read(stream, parser)
 
-        if not value:
+        if value is None:
             raise nip.parser.ParserError(stream, "Wrong right value")
 
         return value
@@ -110,6 +111,9 @@ class Value(Element):
         if isinstance(self.value, str):
             return f'"{self.value}"'
         return str(self.value)
+
+    def __len__(self):
+        return len(self.value)
 
 
 class LinkCreation(Element):
@@ -184,6 +188,10 @@ class Tag(Element):
             else:
                 args, kwargs = [value], {}
 
+        if self.name not in constructor.builders:
+            raise nip.constructor.ConstructorError(
+                self, args, kwargs, f"Constructor for Tag '{self.name}' is not registered.")
+
         messages = nip.constructor.check_typing(constructor.builders[self.name], args, kwargs)
         if len(messages) > 0:
             if constructor.strict_typing:
@@ -235,6 +243,9 @@ class Args(Element):
 
             break
 
+        if stream.pos > start_indent:
+            raise nip.parser.ParserError(stream, "Unexpected indent")
+
         if not args and not kwargs:
             return None
         return Args("args", (args, kwargs))
@@ -281,6 +292,9 @@ class Args(Element):
         except TypeError:
             return self.value[1][item]
 
+    def __len__(self):
+        return len(self.value[0]) + len(self.value[1])
+
     def to_python(self):
         args = list(item.to_python() for item in self.value[0])
         kwargs = {key: value.to_python() for key, value in self.value[1].items()}
@@ -321,15 +335,22 @@ class Iter(Element):
 
     @classmethod
     def read(cls, stream: nip.stream.Stream, parser: nip.parser.Parser) -> Union[Iter, None]:
-        read_tokens = stream.peek(tokens.Operator('@'), tokens.Name, tokens.List) or \
-                      stream.peek(tokens.Operator('@'), tokens.List)
+        read_tokens = stream.peek(tokens.Operator('@'), tokens.Name) or \
+                      stream.peek(tokens.Operator('@'))
         if read_tokens is None:
             return None
         stream.step()
-        if len(read_tokens) == 2:
-            iterator = Iter('', read_tokens[1].value)
+        value = RightValue.read(stream, parser)
+        if isinstance(value, Value) and isinstance(value.value, list):
+            value = value.value
+        elif isinstance(value, Args) and len(value.value[1]) == 0:
+            value = value
         else:
-            iterator = Iter(read_tokens[1].value, read_tokens[2].value)
+            raise nip.parser.ParserError(stream, "List is expected as a value for Iter node")
+        if len(read_tokens) == 1:
+            iterator = Iter('', value)
+        else:
+            iterator = Iter(read_tokens[1].value, value)
 
         parser.iterators.append(iterator)
         return iterator
@@ -342,7 +363,10 @@ class Iter(Element):
     def construct(self, constructor: nip.constructor.Constructor):
         if self.return_index == -1:
             raise Exception("Iterator index was not specified by IterParser")
-        return self.value[self.return_index]
+        if isinstance(self.value, list):
+            return self.value[self.return_index]
+        else:
+            return self.value[self.return_index].construct(constructor)
 
     def dump(self, dumper: nip.dumper.Dumper):
         if self.return_index == -1:
