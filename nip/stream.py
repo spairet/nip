@@ -1,54 +1,74 @@
-from copy import copy
-from typing import Union
+import nip.tokens as tokens
+
+from typing import Union, List, Type
 
 
 class Stream:
-    # mb: do move in token reading if it is performed.
-    # mb: add read_token method to stream
-    # mb: add read_name, read_string, etc. methods to stream
-    def __init__(self, sstream: str, start_pos: int = 0):
+    def __init__(self, sstream: str):
         self.lines = sstream.split("\n")
-        self.lines = [line for line in self.lines if len(line) > 0]
-        self.pos = start_pos
+        self.lines = [line + ' ' for line in self.lines]
         self.n = 0
-        self.last_indent = -1
+        self.pos = 0
 
-    def __getitem__(self, item) -> Union[str, None]:
-        if isinstance(item, int):
-            if self.pos + item >= len(self.lines[self.n]):
-                return ''
-            return self.lines[self.n][self.pos + item]
-        elif isinstance(item, slice):
-            start = (item.start or 0) + self.pos
-            stop = None if item.stop is None else item.stop + self.pos
-            item = slice(start, stop, item.step)
-            return self.lines[self.n][item]
-        else:
-            raise IndexError("Unexpected index")
+    def peek(self, *args: Union[tokens.Token, Type[tokens.Token]]):
+        """Reads several tokens from stream"""
+        if not self:
+            return None
+        line = self.lines[self.n]
+        pos = self.pos
+        read_tokens = []
+        for arg in args:
+            if isinstance(arg, tokens.Token):
+                token_type = arg.__class__
+            else:
+                token_type = arg
 
-    def move(self, shift=0):
-        self.pos += shift
+            while pos < len(line) and line[pos].isspace():
+                pos += 1
+            if pos >= len(line):
+                return None
 
-        # read out spaces
-        while self.pos < len(self.lines[self.n]) and \
-                self.lines[self.n][self.pos].isspace():
-            self.pos += 1
+            try:
+                length, token = token_type.read(line[pos:])
+            except tokens.TokenError as e:
+                raise StreamError(self.n, pos, e)
+            if token is None:
+                return None
+            if isinstance(arg, tokens.Token) and token != arg:
+                return None
 
-        if self.pos == len(self.lines[self.n]) or \
-                self.lines[self.n][self.pos] == '#':
+            token.set_position(self.n, pos)
+            read_tokens.append(token)
+            pos += length
+
+        self.last_peak_pos = pos
+        return read_tokens
+
+    def step(self):
+        self.pos = self.last_peak_pos
+        while self and (
+                self.pos >= len(self.lines[self.n]) or
+                self.lines[self.n][self.pos:].isspace() or
+                self.lines[self.n][self.pos:].strip()[0] == '#'
+                ):
             self.n += 1
             self.pos = 0
 
         if not self:
             return
-        # skip empty lines
-        while self and (self.lines[self.n].isspace() or self.lines[self.n].strip()[0]) == '#':
-            self.n += 1
+
+        while self.lines[self.n][self.pos].isspace():
+            self.pos += 1
 
     def __bool__(self):
         return self.n < len(self.lines)
 
-    def __add__(self, shift: int):  # ToDo: do we even need this?
-        new_stream = copy(self)  # ToDo: check how does ot work
-        new_stream.move(shift)
-        return new_stream
+
+class StreamError(Exception):
+    def __init__(self, line: int, position: int, msg: Exception):
+        self.line = line
+        self.pos = position
+        self.msg = msg
+
+    def __str__(self):
+        return f"{self.line + 1}:{self.pos}: {self.msg}"

@@ -1,6 +1,8 @@
 # Constuctor of tagged objects
 import importlib
 import importlib.util
+import inspect
+import typeguard
 
 from typing import Callable, Optional, Union
 from types import FunctionType, ModuleType, BuiltinFunctionType
@@ -14,12 +16,14 @@ global_calls = {}  # history of object creations
 
 
 class Constructor:
-    def __init__(self, ignore_rewriting=False, load_builders=True):
+    def __init__(self, ignore_rewriting=False, load_builders=True,
+                 strict_typing=False):
         self.builders = {}
         self.ignore_rewriting = ignore_rewriting
         if load_builders:
             self.load_builders()
         self.vars = {}
+        self.strict_typing = strict_typing
 
     def construct(self, element):
         return element.construct(self)
@@ -46,15 +50,17 @@ class Constructor:
 
 
 class ConstructorError(Exception):
-    def __init__(self, element, args, kwargs):
+    def __init__(self, element, args, kwargs, e):
         self.cls = type(element).__name__
         self.name = element.name
         self.args = args
         self.kwargs = kwargs
+        self.e = e
 
     def __str__(self):
         return f"Unable to construct {self.cls} '{self.name}' with args:{self.args} and " \
-               f"kwargs:{self.kwargs}"
+               f"kwargs:{self.kwargs}.\nFollowing exception occurred:\n" \
+               f"{self.e.__class__.__name__}: {self.e}"
 
 
 # mb: add meta for auto detecting this class as YAP-builder
@@ -128,3 +134,30 @@ def wrap_module(module: Union[str, ModuleType], wrap_builtins=False):
         if isinstance(value, (type, FunctionType)) or \
                 wrap_builtins and isinstance(value, BuiltinFunctionType):
             nip(value)
+
+
+def check_typing(func, args, kwargs):
+    signature = inspect.signature(func)
+    messages = []
+    for arg, param in zip(args, signature.parameters.values()):
+        if param.annotation is inspect.Parameter.empty:
+            continue
+        try:
+            typeguard.check_type(param.name, arg, param.annotation)
+        except TypeError as e:
+            messages.append("- " + str(e))
+
+    for name, value in kwargs.items():
+        if name not in signature.parameters:
+            continue  # handled by python
+        annotation = signature.parameters[name].annotation
+        if annotation is inspect.Parameter.empty:
+            continue
+        try:
+            typeguard.check_type(name, value, annotation)
+        except TypeError as e:
+            messages.append("- " + str(e))
+
+    return messages
+
+

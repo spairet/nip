@@ -7,9 +7,13 @@ from .stream import Stream
 
 
 class Parser:  # mb: we don't need Parser itself. its just storage for links and tags. Hm...
-    def __init__(self):
+    def __init__(self, implicit_fstrings: bool = True,
+                 strict: bool = False):
         self.links = []
         self.iterators = []
+        self.implicit_fstrings = implicit_fstrings
+        self.strict = strict
+        self.last_indent = -1
 
     def parse(self, path: Union[str, Path]):
         path = Path(path)
@@ -23,7 +27,6 @@ class Parser:  # mb: we don't need Parser itself. its just storage for links and
 
     def parse_string(self, string):
         stream = Stream(string)  # mb: add stream to parser and log errors more convenient
-        stream.move()
         return elements.Document.read(stream, self)
 
     def has_iterators(self) -> bool:
@@ -37,4 +40,4 @@ class ParserError(Exception):  # ToDo: currently blank lines skipped thus printe
         self.msg = msg
 
     def __str__(self):
-        return f"{self.line}:{self.pos}: {self.msg}"
+        return f"{self.line + 1}:{self.pos}: {self.msg}"
