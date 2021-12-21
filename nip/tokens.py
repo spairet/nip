@@ -59,8 +59,8 @@ class Number(Token):
             if c.isnumeric():
                 string_number += c
                 continue
-            if c == '-' and len(string_number) == 0:
-                string_number = c
+            if c == '-' and (len(string_number) == 0 or string_number[-1] == 'e'):
+                string_number += c
                 continue
             if c in ['e', '.'] and c not in string_number:
                 string_number += c
