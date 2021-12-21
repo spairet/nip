@@ -42,6 +42,9 @@ class Element(ABC):
     def dump(self, dumper: nip.dumper.Dumper):
         return self.value.dump(dumper)
 
+    def __eq__(self, other):
+        return self.name == other.name and self.value == other.value
+
 
 class Document(Element):  # ToDo: add multi document support
     @classmethod
@@ -121,9 +124,10 @@ class LinkCreation(Element):
     def read(cls, stream: nip.stream.Stream, parser: nip.parser.Parser) -> Union[Element, None]:
         read_tokens = stream.peek(tokens.Operator('&'), tokens.Name)
         if read_tokens is None:
+            # if stream.peek(tokens.Operator('&')):  # mb: do it more certainly: peak operator
+            #     raise nip.parser.ParserError(      # mb: firstly and then choose class to read)
+            #         stream, "Found variable creation operator '&' but name is not specified")
             return None
-        # if not isinstance(stream[1], tokens.Name):
-        #     raise nip.parser.ParserError(stream, "Wrong var creation")  # mb: No good errors now =(
 
         name = read_tokens[1].value
         stream.step()
@@ -265,7 +269,9 @@ class Args(Element):
     @classmethod
     def _read_dict_pair(cls, stream: nip.stream.Stream, parser: nip.parser.Parser) \
             -> Union[Tuple[str, Element], Tuple[None, None]]:
-        read_tokens = stream.peek(tokens.String, tokens.Operator(': '))
+        # mb: read String instead of Name for keys with spaces,
+        # mb: but this leads to the case that
+        read_tokens = stream.peek(tokens.Name, tokens.Operator(': '))
         if read_tokens is None:
             return None, None
 

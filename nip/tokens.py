@@ -10,7 +10,7 @@ class Token(ABC):
     """Abstract of token reader"""
     def __init__(self, value: Any = None):
         self.value = value
-        
+
     @staticmethod
     @abstractmethod
     def read(stream: str) -> Tuple[int, Union[None, Token]]:
@@ -39,7 +39,7 @@ class TokenError(Exception):
 class Number(Token):
     @staticmethod
     def read(stream: str) -> Tuple[int, Union[None, Number]]:
-        string = stream[:].strip()
+        string = Number._read_number_string(stream)
         value = None
         for t in (int, float):
             try:
@@ -51,6 +51,22 @@ class Number(Token):
             return len(string), Number(value)
         else:
             return 0, None
+
+    @staticmethod
+    def _read_number_string(stream: str):
+        string_number = ""
+        for c in stream[:].strip():
+            if c.isnumeric():
+                string_number += c
+                continue
+            if c == '-' and len(string_number) == 0:
+                string_number = c
+                continue
+            if c in ['e', '.'] and c not in string_number:
+                string_number += c
+                continue
+            break
+        return string_number
 
 
 class Bool(Token):
@@ -87,7 +103,7 @@ class String(Token):
             return pos, String(stream[1:pos - 1])
 
         pos = len(stream)
-        for op in Operator.operators: # mb: not all operators stop string?
+        for op in ['#']:  # mb: other operators stops string. (hard to raise good exception)
             found_pos = stream.find(op)
             if found_pos >= 0:
                 pos = min(pos, found_pos)

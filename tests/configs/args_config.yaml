@@ -2,7 +2,7 @@ main:
   - arg1
   - 321
   one: 1
-  rwo: 2
+  two: 2
   three: "three"
 
 other:

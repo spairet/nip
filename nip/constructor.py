@@ -4,7 +4,7 @@ import importlib.util
 import inspect
 import typeguard
 
-from typing import Callable, Optional, Union
+from typing import Callable, Optional, Union, List
 from types import FunctionType, ModuleType, BuiltinFunctionType
 from multipledispatch import dispatch
 
@@ -85,6 +85,7 @@ def nip_decorator(name=None, wrap_call=False):
 
 @dispatch(str)
 def nip(name: str, wrap_call: bool = False):
+    """Wrapper to register function or class with specified name."""
     return nip_decorator(name, wrap_call)
 
 
@@ -95,11 +96,13 @@ def nip(wrap_call=False):
 
 @dispatch([(type, FunctionType, BuiltinFunctionType)])
 def nip(item: Union[type, FunctionType]):
+    """Wrapper to register function or class with default name."""
     return nip_decorator()(item)
 
 
 @dispatch(ModuleType)
 def nip(module, wrap_builtins=False):
+    """Wraps everything specified under module."""
     wrap_module(module, wrap_builtins)
 
 
@@ -126,6 +129,9 @@ def wrap_module(module: Union[str, ModuleType], wrap_builtins=False):
     ----------
     module: str or ModuleType
         Module name (e.g. "numpy.random") or module itself
+    wrap_builtins
+        Whether to wrap builtin functions or not.
+        (Useful when wrapping whole module like `numpy`)
     """
     if isinstance(module, str):
         module = importlib.import_module(module)
@@ -136,8 +142,11 @@ def wrap_module(module: Union[str, ModuleType], wrap_builtins=False):
             nip(value)
 
 
-def check_typing(func, args, kwargs):
-    signature = inspect.signature(func)
+def check_typing(func, args, kwargs) -> List[str]:
+    try:
+        signature = inspect.signature(func)
+    except ValueError:  # unable to load function signature (common case for builtin functions)
+        return []
     messages = []
     for arg, param in zip(args, signature.parameters.values()):
         if param.annotation is inspect.Parameter.empty:
