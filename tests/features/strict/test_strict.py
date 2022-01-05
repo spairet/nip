@@ -7,5 +7,5 @@ wrap_module("builders")
 # constructor = Constructor(strict_typing=True)
 # print(constructor.construct(node))
 
-print(load("../features/strict/configs/strict_config.nip", strict=True))
-run("../features/run/configs/run.nip", strict=False)
+print(load("configs/strict_config.nip", strict=True))
+run("../run/configs/run.nip", strict=False)
