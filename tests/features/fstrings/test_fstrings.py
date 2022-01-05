@@ -1,5 +1,13 @@
-def test_fstrings():
-    pass
+def test_implicit():
+    from nip import load
+    res = load("features/fstrings/configs/fstrings.nip")
+    expected = {
+        'first_name': "Ilya",
+        'second_name': "Vasiliev",
+        'call': "Your highness the great and beautiful lord, Ilya Vasiliev",
+        'implicit': "{first_name} the {second_name}"  # implicit fstrings are not supported
+    }
+    assert res == expected
 
 
 def test_iter_fstrings():

@@ -1,3 +1,3 @@
 from nip import load
 
-print(load("../configs/fstrings.nip"))
+print(load("../features/fstrings/configs/fstrings.nip"))

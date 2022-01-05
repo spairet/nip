@@ -34,6 +34,6 @@ print(configs['other'].to_python())
 
 
 # Iterate over objects Cartesian product of config iterators:
-objects = load("configs/iter_config.yaml")
+objects = load("../features/iter/configs/iter_config.yaml")
 for obj in objects:
     print(obj)

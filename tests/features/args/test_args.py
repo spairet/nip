@@ -4,10 +4,10 @@ import pytest
 def test_args():
     from nip import parse, load, wrap_module
     wrap_module("builders")
-    res = parse("configs/args_config.yaml")
+    res = parse("features/args/configs/args_config.yaml")
     print(res.to_python())
 
-    result = load("configs/args_config.yaml")
+    result = load("features/args/configs/args_config.yaml")
     expected_result = {
         'main': (
             ['arg1', 321],

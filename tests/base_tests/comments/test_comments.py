@@ -1,7 +1,7 @@
 def test_comment():
     import builders  # mb: from . import builders
     from nip import load
-    res = load("base_tests/comments/configs/inline_comment.nip")
+    res = load("configs/comment.nip")
     assert isinstance(res, dict)
     assert 'main' in res
     assert res['main'] == {
@@ -16,3 +16,9 @@ def test_comment():
     assert 'obj' in res
     assert isinstance(res['obj'], builders.SimpleClass)
     assert res['obj'].name == "Ilya"
+
+
+def test_empty():
+    from nip import load
+    res = load("base_tests/comments/configs/empty_comment.nip")
+    assert res is None
