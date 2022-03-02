@@ -1,7 +1,10 @@
+from test_utils import NOTHING, IS_NOTHING
+
+
 def test_comment():
     import builders  # mb: from . import builders
     from nip import load
-    res = load("configs/comment.nip")
+    res = load("base_tests/comments/configs/comment.nip")
     assert isinstance(res, dict)
     assert 'main' in res
     assert res['main'] == {
@@ -21,4 +24,5 @@ def test_comment():
 def test_empty():
     from nip import load
     res = load("base_tests/comments/configs/empty_comment.nip")
-    assert res is None
+    print(res, res.__class__)
+    assert IS_NOTHING(res)

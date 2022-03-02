@@ -15,7 +15,7 @@ print(result)
 
 
 # Parsing and saving config with iterators:
-configs = parse("configs/config.nip")
+configs = parse("../complex/configs/config.nip")
 for config in configs:
     # get some staff from the deep
     print("3: ", config['other']['list'][3])
@@ -28,7 +28,7 @@ for config in configs:
 tree = parse("tags/configs/simple_tag_config.nip")
 print(tree.to_python())
 
-configs = next(parse("configs/config.nip"))  # get first config
+configs = next(parse("../complex/configs/config.nip"))  # get first config
 print(configs['other'])
 print(configs['other'].to_python())
 

@@ -417,7 +417,7 @@ class Nothing(Element):
             return Nothing()
 
     def construct(self, constructor: nip.constructor.Constructor):
-        return Nothing
+        return self
 
     def dump(self, dumper: nip.dumper.Dumper):
         return ""

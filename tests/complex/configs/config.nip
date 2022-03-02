@@ -17,8 +17,8 @@ other:
     -
     # more comments
     sdf:
-    - sfds:
-        abra: @ ["cadabra", "ababra", "avocado"]
-    - - nested value
-      - one more
-      - nested: dict
+      - sfds:
+          abra: @ ["cadabra", "ababra", "avocado"]
+      - - nested value
+        - one more
+        - nested: dict

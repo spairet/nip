@@ -1,3 +1,3 @@
 from nip import load
 
-print(load("configs/wrong.nip"))
+print(load("../complex/configs/wrong.nip"))
