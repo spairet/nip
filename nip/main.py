@@ -209,7 +209,7 @@ def run(path: Union[str, Path],
         "`config_parameter` can be used only with specified `func`"
     config = parse(path, always_iter=always_iter, strict=strict)
     if isinstance(config, Iterable):
-        return list(_iter_run(config, verbose, return_values, return_configs,
+        return list(_iter_run(config, func, verbose, return_values, return_configs,
                               config_parameter, strict))  # mb iter?
 
     return _single_run(config, func, verbose, return_values, return_configs, config_parameter, strict)

@@ -354,7 +354,7 @@ class Iter(Element):
         elif isinstance(value, Args) and len(value.value[1]) == 0:
             value = value
         else:
-            raise nip.parser.ParserError(stream, "List is expected as a value for Iter node")
+            raise nip.parser.ParserError(stream, "List is expected as a value for Iterable node")
         if len(read_tokens) == 1:
             iterator = Iter('', value)
         else:
@@ -373,15 +373,22 @@ class Iter(Element):
             raise Exception("Iterator index was not specified by IterParser")
         if isinstance(self.value, list):
             return self.value[self.return_index]
-        else:
+        elif isinstance(self.value, Args):
             return self.value[self.return_index].construct(constructor)
+        else:
+            raise nip.constructor.ConstructorError(self, (), {}, "Unexpected iter value type")
 
     def dump(self, dumper: nip.dumper.Dumper):
         if self.return_index == -1:
             raise nip.dumper.DumpError(
                 "Dumping an iterator but index was not specified by IterParser"
             )
-        return str(self.value[self.return_index])
+        if isinstance(self.value, list):
+            return str(self.value[self.return_index])
+        elif isinstance(self.value, Args):
+            return self.value[self.return_index].dump(dumper)
+        else:
+            raise nip.dumper.DumpError("Unable to dump Iterable node: unexpected value type")
 
 
 class InlinePython(Element):
