@@ -133,6 +133,8 @@ class LinkCreation(Element):
         stream.step()
 
         value = RightValue.read(stream, parser)
+        if name in parser.links:
+            raise nip.parser.ParserError(f"Redefining of link '{name}'")
         parser.links.append(name)
 
         return LinkCreation(name, value)
