@@ -1,2 +1,3 @@
 from .constructor import nip, wrap_module
-from .main import parse, load, dump, dumps, construct, run
+from .convertor import pin
+from .main import parse, construct, load, dump, dumps, convert, run

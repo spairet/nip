@@ -6,6 +6,7 @@ from .parser import Parser
 from .constructor import Constructor, ConstructorError
 from .iter_parser import IterParser
 from .dumper import Dumper
+from .convertor import Convertor
 from . import elements
 
 
@@ -86,24 +87,26 @@ def load(path: Union[str, Path],
     return construct(config, strict)
 
 
-def dump(path: Union[str, Path], tree: elements.Element):
+def dump(path: Union[str, Path], obj: Union[elements.Element, object]):
     """Dumps config tree to file
     Parameters
     ----------
     path: str or Path
         Path to save the config
-    tree: Element
-        Read or generated config tree
+    obj: Element or object
+        Read or generated config if Element. In case of any other object `convert` will be called.
     """
+    if not isinstance(obj, elements.Element):
+        obj = convert(obj)
     dumper = Dumper()
-    dumper.dump(path, tree)
+    dumper.dump(path, obj)
 
 
-def dumps(tree: elements.Element):
+def dumps(obj: Union[elements.Element, object]):
     """Dumps config tree to file
     Parameters
     ----------
-    tree: Element
+    obj: Element
         Read or generated config tree
 
     Returns
@@ -111,8 +114,15 @@ def dumps(tree: elements.Element):
     string: str
         Dumped element as a string
     """
+    if not isinstance(obj, elements.Element):
+        obj = convert(obj)
     dumper = Dumper()
-    return dumper.dumps(tree)
+    return dumper.dumps(obj)
+
+
+def convert(obj):
+    convertor = Convertor()
+    return convertor.convert(obj)
 
 
 def _run_return(value, config, return_values, return_configs):

@@ -63,7 +63,7 @@ class ConstructorError(Exception):
                f"{self.e.__class__.__name__}: {self.e}"
 
 
-# mb: add meta for auto detecting this class as YAP-builder
+# mb: add meta for auto detecting this class as NIP-builder
 # ToDo: Add init wrapper for auto detection init args for convenient object dumping
 class NIPBuilder:
     pass
