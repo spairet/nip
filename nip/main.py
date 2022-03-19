@@ -88,11 +88,12 @@ def load(path: Union[str, Path],
 
 
 def dump(path: Union[str, Path], obj: Union[elements.Element, object]):
-    """Dumps config tree to file
+    """Dumps config tree to file.
+
     Parameters
     ----------
     path: str or Path
-        Path to save the config
+        Path to save the config.
     obj: Element or object
         Read or generated config if Element. In case of any other object `convert` will be called.
     """
@@ -102,17 +103,18 @@ def dump(path: Union[str, Path], obj: Union[elements.Element, object]):
     dumper.dump(path, obj)
 
 
-def dumps(obj: Union[elements.Element, object]):
-    """Dumps config tree to file
+def dumps(obj: Union[elements.Element, object]) -> str:
+    """Dumps config tree to file.
+
     Parameters
     ----------
     obj: Element
-        Read or generated config tree
+        Read or generated config tree.
 
     Returns
     -------
     string: str
-        Dumped element as a string
+        Dumped element as a string.
     """
     if not isinstance(obj, elements.Element):
         obj = convert(obj)
@@ -121,6 +123,26 @@ def dumps(obj: Union[elements.Element, object]):
 
 
 def convert(obj):
+    """Converts object to nip.Element
+
+    Parameters
+    ----------
+    obj: nip-serializable object.
+
+    Returns
+    -------
+    Element:
+        Object representation as Nip.Element
+
+    Notes
+    -----
+    Any standard python objects that can be casted to and from nip are supported.
+    For custom classes method `__nip__` that casts them to the standard object are needed.
+    Anything that is returned from `__nip__` method will be recursively converted.
+    `__nip__` method is expected to return everything needed for object construction with __init__
+    or any other used constructor.
+    By default, tag specified in @nip or default class name otherwise will be used as a tag.
+    """
     convertor = Convertor()
     return convertor.convert(obj)
 

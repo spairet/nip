@@ -33,6 +33,9 @@ class Element(ABC):
     def __getitem__(self, item):
         return self.value[item]
 
+    def __setitem__(self, key, value):
+        self.value[key] = value
+
     def to_python(self):
         return self.value.to_python()
 
@@ -221,7 +224,7 @@ class Args(Element):
             return None
 
         args = []
-        kwargs = {}
+        kwargs = {}  # mb: just dict with integer and string keys
         read_kwarg = False
         while stream and stream.pos == start_indent:
             parser.last_indent = start_indent
@@ -297,6 +300,15 @@ class Args(Element):
             return self.value[0][item]
         except TypeError:
             return self.value[1][item]
+
+    def __setitem__(self, key, value):
+        if isinstance(key, int):
+            self.value[0][key] = nip.convert(value)
+        else:
+            self.value[1][key] = nip.convert(value)
+
+    def append(self, value):
+        self.value[0].append(nip.convert(value))
 
     def __len__(self):
         return len(self.value[0]) + len(self.value[1])

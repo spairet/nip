@@ -43,7 +43,7 @@ class Convertor:
         else:
             raise TypeError("Expected type or str as class_ argument")
         if tag is None:
-            for builder_tag, builder in global_builders.items:
+            for builder_tag, builder in global_builders.items():
                 if isinstance(builder, type) and builder.__class__.__name__ == class_name:
                     tag = builder_tag
             tag = tag or class_name
@@ -51,6 +51,9 @@ class Convertor:
 
     def _load_globals(self):
         self.convertors.update(global_convertors)
+        for builder_tag, builder in global_builders.items():
+            if isinstance(builder, type) and hasattr(builder, '__nip__'):
+                self.convertors[builder.__name__] = (builder_tag, builder.__nip__)
 
 
 class ConvertorError(Exception):
@@ -64,11 +67,22 @@ class ConvertorError(Exception):
                f"{self.message}"
 
 
-def pin(tag: str):
+def pin(class_name: str, tag: str):
+    """Wrapper that registers the function as an object dumper.
+
+    Parameters
+    ----------
+    class_name:
+        Class that should be dumped using this function.
+    tag:
+        What tag should be used for this class in config file.
+    """
     assert tag is None or len(tag) > 0, "name should be nonempty"
 
-    def _(item):
-        global_convertors[tag] = item
+    def _(item: type):
+        if not isinstance(item, type):
+            raise ValueError("Expected class type to be wrapped.")
+        global_convertors[class_name] = (tag, item)
         return item
 
     return _
