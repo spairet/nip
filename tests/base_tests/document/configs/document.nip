@@ -1,0 +1,6 @@
+--- Strange_and_2_long_DocumentName !MyClass
+
+name: some_name
+f: !myfunc
+  a: 1
+  b: 2

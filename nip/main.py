@@ -6,6 +6,7 @@ from .parser import Parser
 from .constructor import Constructor, ConstructorError
 from .iter_parser import IterParser
 from .dumper import Dumper
+from .convertor import Convertor
 from . import elements
 
 
@@ -86,33 +87,64 @@ def load(path: Union[str, Path],
     return construct(config, strict)
 
 
-def dump(path: Union[str, Path], tree: elements.Element):
-    """Dumps config tree to file
+def dump(path: Union[str, Path], obj: Union[elements.Element, object]):
+    """Dumps config tree to file.
+
     Parameters
     ----------
     path: str or Path
-        Path to save the config
-    tree: Element
-        Read or generated config tree
+        Path to save the config.
+    obj: Element or object
+        Read or generated config if Element. In case of any other object `convert` will be called.
     """
+    if not isinstance(obj, elements.Element):
+        obj = convert(obj)
     dumper = Dumper()
-    dumper.dump(path, tree)
+    dumper.dump(path, obj)
 
 
-def dumps(tree: elements.Element):
-    """Dumps config tree to file
+def dumps(obj: Union[elements.Element, object]) -> str:
+    """Dumps config tree to file.
+
     Parameters
     ----------
-    tree: Element
-        Read or generated config tree
+    obj: Element
+        Read or generated config tree.
 
     Returns
     -------
     string: str
-        Dumped element as a string
+        Dumped element as a string.
     """
+    if not isinstance(obj, elements.Element):
+        obj = convert(obj)
     dumper = Dumper()
-    return dumper.dumps(tree)
+    return dumper.dumps(obj)
+
+
+def convert(obj):
+    """Converts object to nip.Element
+
+    Parameters
+    ----------
+    obj: nip-serializable object.
+
+    Returns
+    -------
+    Element:
+        Object representation as Nip.Element
+
+    Notes
+    -----
+    Any standard python objects that can be casted to and from nip are supported.
+    For custom classes method `__nip__` that casts them to the standard object are needed.
+    Anything that is returned from `__nip__` method will be recursively converted.
+    `__nip__` method is expected to return everything needed for object construction with __init__
+    or any other used constructor.
+    By default, tag specified in @nip or default class name otherwise will be used as a tag.
+    """
+    convertor = Convertor()
+    return convertor.convert(obj)
 
 
 def _run_return(value, config, return_values, return_configs):
@@ -209,7 +241,7 @@ def run(path: Union[str, Path],
         "`config_parameter` can be used only with specified `func`"
     config = parse(path, always_iter=always_iter, strict=strict)
     if isinstance(config, Iterable):
-        return list(_iter_run(config, verbose, return_values, return_configs,
+        return list(_iter_run(config, func, verbose, return_values, return_configs,
                               config_parameter, strict))  # mb iter?
 
     return _single_run(config, func, verbose, return_values, return_configs, config_parameter, strict)

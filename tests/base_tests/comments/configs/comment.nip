@@ -1,0 +1,28 @@
+#start comment
+
+main: &asd  # comment after var creationg
+  number: 1 #first_inline
+  float: 0.314159265   #second inline comment
+  modern_float: 3e-5     #comment after modern float
+  string: this is some string 123^& !  #aaaand third one
+  quated_string: "  !&and another one string 123 'qwe' @#!*^@%# "  #and a comment of cause
+
+other: *asd  # comment after var usage
+
+
+#middle comment block
+#
+#
+# still comment block
+####################################
+#######COOL####COMMENT##############
+####################################
+#the end of comment block
+
+
+obj: !SimpleClass  # comment after tag
+  name: "Ilya"
+
+
+
+# just a comment at the end

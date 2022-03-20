@@ -33,6 +33,9 @@ class Element(ABC):
     def __getitem__(self, item):
         return self.value[item]
 
+    def __setitem__(self, key, value):
+        self.value[key] = value
+
     def to_python(self):
         return self.value.to_python()
 
@@ -41,6 +44,9 @@ class Element(ABC):
 
     def dump(self, dumper: nip.dumper.Dumper):
         return self.value.dump(dumper)
+
+    def __eq__(self, other):
+        return self.name == other.name and self.value == other.value
 
 
 class Document(Element):  # ToDo: add multi document support
@@ -52,7 +58,7 @@ class Document(Element):  # ToDo: add multi document support
 
     @classmethod
     def _read_name(cls, stream: nip.stream.Stream):
-        read_tokens = stream.peek(tokens.Operator('---'), tokens.String) or \
+        read_tokens = stream.peek(tokens.Operator('---'), tokens.Name) or \
                       stream.peek(tokens.Operator('---'))
         if read_tokens is not None:
             stream.step()
@@ -121,14 +127,17 @@ class LinkCreation(Element):
     def read(cls, stream: nip.stream.Stream, parser: nip.parser.Parser) -> Union[Element, None]:
         read_tokens = stream.peek(tokens.Operator('&'), tokens.Name)
         if read_tokens is None:
+            # if stream.peek(tokens.Operator('&')):  # mb: do it more certainly: peak operator
+            #     raise nip.parser.ParserError(      # mb: firstly and then choose class to read)
+            #         stream, "Found variable creation operator '&' but name is not specified")
             return None
-        # if not isinstance(stream[1], tokens.Name):
-        #     raise nip.parser.ParserError(stream, "Wrong var creation")  # mb: No good errors now =(
 
         name = read_tokens[1].value
         stream.step()
 
         value = RightValue.read(stream, parser)
+        if name in parser.links:
+            raise nip.parser.ParserError(f"Redefining of link '{name}'")
         parser.links.append(name)
 
         return LinkCreation(name, value)
@@ -217,7 +226,7 @@ class Args(Element):
             return None
 
         args = []
-        kwargs = {}
+        kwargs = {}  # mb: just dict with integer and string keys
         read_kwarg = False
         while stream and stream.pos == start_indent:
             parser.last_indent = start_indent
@@ -265,7 +274,9 @@ class Args(Element):
     @classmethod
     def _read_dict_pair(cls, stream: nip.stream.Stream, parser: nip.parser.Parser) \
             -> Union[Tuple[str, Element], Tuple[None, None]]:
-        read_tokens = stream.peek(tokens.String, tokens.Operator(': '))
+        # mb: read String instead of Name for keys with spaces,
+        # mb: but this leads to the case that
+        read_tokens = stream.peek(tokens.Name, tokens.Operator(': '))
         if read_tokens is None:
             return None, None
 
@@ -291,6 +302,15 @@ class Args(Element):
             return self.value[0][item]
         except TypeError:
             return self.value[1][item]
+
+    def __setitem__(self, key, value):
+        if isinstance(key, int):
+            self.value[0][key] = nip.convert(value)
+        else:
+            self.value[1][key] = nip.convert(value)
+
+    def append(self, value):
+        self.value[0].append(nip.convert(value))
 
     def __len__(self):
         return len(self.value[0]) + len(self.value[1])
@@ -346,7 +366,7 @@ class Iter(Element):
         elif isinstance(value, Args) and len(value.value[1]) == 0:
             value = value
         else:
-            raise nip.parser.ParserError(stream, "List is expected as a value for Iter node")
+            raise nip.parser.ParserError(stream, "List is expected as a value for Iterable node")
         if len(read_tokens) == 1:
             iterator = Iter('', value)
         else:
@@ -365,15 +385,22 @@ class Iter(Element):
             raise Exception("Iterator index was not specified by IterParser")
         if isinstance(self.value, list):
             return self.value[self.return_index]
-        else:
+        elif isinstance(self.value, Args):
             return self.value[self.return_index].construct(constructor)
+        else:
+            raise nip.constructor.ConstructorError(self, (), {}, "Unexpected iter value type")
 
     def dump(self, dumper: nip.dumper.Dumper):
         if self.return_index == -1:
             raise nip.dumper.DumpError(
                 "Dumping an iterator but index was not specified by IterParser"
             )
-        return str(self.value[self.return_index])
+        if isinstance(self.value, list):
+            return str(self.value[self.return_index])
+        elif isinstance(self.value, Args):
+            return self.value[self.return_index].dump(dumper)
+        else:
+            raise nip.dumper.DumpError("Unable to dump Iterable node: unexpected value type")
 
 
 class InlinePython(Element):
@@ -411,7 +438,7 @@ class Nothing(Element):
             return Nothing()
 
     def construct(self, constructor: nip.constructor.Constructor):
-        return Nothing
+        return self
 
     def dump(self, dumper: nip.dumper.Dumper):
         return ""

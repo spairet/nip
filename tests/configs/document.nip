@@ -1,6 +1,0 @@
---- DocumentName !MyClass
-
-name: something
-f: !myfunc
-  a: 1
-  b: 2
