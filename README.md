@@ -10,7 +10,7 @@ Installation
 $ pip install nip-config
 ```
 
-Call for Contributions
+Contribution
 --
 Everything currently presented in nip and future plans are discussable. Feel free to suggest any ideas for future updates or PRs.
 
