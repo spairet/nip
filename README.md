@@ -26,5 +26,6 @@ If you find any bugs or unexpected behaviour please report it with an attached c
 - [x] fstrings
 - [X] strict: check typing and reloading dict keys
 - [x] `run` function
+- [x] object dumping
 - [ ] Multiline strings with """ operator (questionable)
 - [ ] \_\_init\_\_ wrapper for convenient object dumping (currently only config dumping. questionable)
