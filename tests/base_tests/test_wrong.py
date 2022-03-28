@@ -1,3 +1,3 @@
 from nip import load
 
-print(load("../complex/configs/wrong.nip"))
+print(load("raises/configs/wrong_dict_indent.nip"))

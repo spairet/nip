@@ -1,0 +1,6 @@
+simple: &simple !SimpleClass
+  name: 234872364
+
+f: !myfunc
+  - 1
+  b: 2

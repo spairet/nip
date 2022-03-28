@@ -10,6 +10,7 @@ from nip.utils import deep_equals
 
 import builders
 
+
 class TestConfigLoadDump:
     save_folder: Path
 

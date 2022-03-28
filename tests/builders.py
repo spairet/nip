@@ -8,7 +8,7 @@ class SimpleClass:
 
     @nip("print_method")
     def print(self):
-        print(self.name)
+        print("My name is: ", self.name)
         return 312983
 
 

@@ -1,0 +1,3 @@
+obj: !def_class
+another_one: !def_class
+constructed: !def_class smothing more interesting

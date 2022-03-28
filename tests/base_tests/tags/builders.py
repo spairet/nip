@@ -44,3 +44,9 @@ def show(*args, **kwargs):
 def main(param, config):
     print(param)
     print(dumps(config))
+
+
+@nip("def_class")
+class ClassWithDefaults:
+    def __init__(self, name: str = "something"):
+        self.name = name
