@@ -1,0 +1,11 @@
+main:
+  number: 1
+  string: 'qwe'
+
+something_more:
+  float: 0.123
+  bool: True
+
+list:
+  - 'some string'
+  - - 123

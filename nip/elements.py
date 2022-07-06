@@ -11,7 +11,7 @@ import nip.tokens as tokens
 import nip.utils
 
 from abc import abstractmethod, ABC
-from typing import Any, Union, Tuple
+from typing import Any, Union, Tuple, Dict
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -47,6 +47,9 @@ class Element(ABC):
 
     def __eq__(self, other):
         return self.name == other.name and self.value == other.value
+
+    def flatten(self, delimiter='.') -> Dict:
+        return nip.utils.flatten(self.to_python(), delimiter)
 
 
 class Document(Element):  # ToDo: add multi document support
@@ -320,7 +323,10 @@ class Args(Element):
         kwargs = {key: value.to_python() for key, value in self.value[1].items()}
         assert args or kwargs, "Error converting Args node to python"  # This should never happen
         if args and kwargs:
-            return args, kwargs
+            result = {}
+            result.update(nip.utils.iterate_items(args))
+            result.update(nip.utils.iterate_items(kwargs))
+            return result
         return args or kwargs
 
     def construct(self, constructor: nip.constructor.Constructor, always_pair=False):
@@ -378,6 +384,8 @@ class Iter(Element):
     def to_python(self):
         if self.return_index == -1:
             raise iter(self.value)
+        if isinstance(self.value[self.return_index], Element):
+            return self.value[self.return_index].to_python()
         return self.value[self.return_index]
 
     def construct(self, constructor: nip.constructor.Constructor):
