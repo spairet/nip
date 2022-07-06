@@ -1,6 +1,3 @@
-from test_utils import NOTHING, deep_conditioned_compare
-
-
 def test_basics():
     from nip import parse
     config = parse("features/flatten/configs/simple.nip")
