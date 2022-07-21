@@ -148,11 +148,16 @@ def convert(obj):
 
 
 def _run_return(value, config, return_values, return_configs):
-    if return_values or return_configs:
-        if not return_values and return_configs:
-            return value if return_values else dumps(config)
-        else:
-            return value, dumps(config)
+    return_tuple = []
+    if return_values:
+        return_tuple.append(value)
+    if return_configs:
+        return_tuple.append(config)
+    if len(return_tuple) == 0:
+        return None
+    if len(return_tuple) == 1:
+        return return_tuple[0]
+    return tuple(return_tuple)
 
 
 def _single_run(config, func, verbose, return_values, return_configs, config_parameter,
@@ -204,7 +209,7 @@ def run(path: Union[str, Path],
         verbose: bool = True,
         strict: bool = False,
         return_values: bool = True,
-        return_configs: bool = True,
+        return_configs: bool = False,
         always_iter: bool = False,
         config_parameter: Optional[str] = None):
     """Runs config. Config should be declared with function to run as a tag for the Document.

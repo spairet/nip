@@ -8,7 +8,7 @@ class SimpleClass:
 
     @nip("print_method")
     def print(self):
-        print(self.name)
+        print("My name is: ", self.name)
         return 312983
 
 
@@ -44,3 +44,20 @@ def show(*args, **kwargs):
 def main(param, config):
     print(param)
     print(dumps(config))
+
+
+@nip("def_class")
+class ClassWithDefaults:
+    def __init__(self, name: str = "something"):
+        self.name = name
+
+class Note:
+    def __init__(self, name, comment):
+        self.name = name
+        self.comment = comment
+
+    def __nip__(self):
+        return self.__dict__
+
+    def __eq__(self, other):
+        return self.name == other.name and self.comment == other.comment

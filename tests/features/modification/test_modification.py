@@ -7,6 +7,11 @@ def test_config():
 
 
 def test_object():
+    import os
+    print("CWD: os.getcwd()")
+    from inspect import getmembers, isfunction
+    import builders
+    print(getmembers(builders))
     from nip import parse, dump, load, nip
     from builders import Note
     config = parse("features/modification/configs/object_config.nip")

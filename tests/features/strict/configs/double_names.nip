@@ -1,0 +1,4 @@
+main:
+  some_name: "string"
+  some_other_name: 234
+  some_name: 34

@@ -192,7 +192,7 @@ class Tag(Element):
             args, kwargs = self.value.construct(constructor, always_pair=True)
         else:
             value = self.value.construct(constructor)
-            if value is Nothing:
+            if isinstance(value,  Nothing):  # mb: Add IS_NOTHING method
                 return constructor.builders[self.name]()
             else:
                 args, kwargs = [value], {}
@@ -240,12 +240,8 @@ class Args(Element):
                 args.append(item)
                 continue
 
-            key, value = cls._read_dict_pair(stream, parser)
+            key, value = cls._read_dict_pair(stream, parser, kwargs.keys())
             if key is not None:
-                if parser.strict and key in kwargs:
-                    raise nip.parser.ParserError(stream,
-                                                 f"Dict key overwriting is forbidden in `strict` "
-                                                 f"mode. Overwritten key: '{key}'.")
                 read_kwarg = True
                 kwargs[key] = value
                 continue
@@ -272,7 +268,7 @@ class Args(Element):
         return value
 
     @classmethod
-    def _read_dict_pair(cls, stream: nip.stream.Stream, parser: nip.parser.Parser) \
+    def _read_dict_pair(cls, stream: nip.stream.Stream, parser: nip.parser.Parser, kwargs_keys) \
             -> Union[Tuple[str, Element], Tuple[None, None]]:
         # mb: read String instead of Name for keys with spaces,
         # mb: but this leads to the case that
@@ -281,6 +277,10 @@ class Args(Element):
             return None, None
 
         key = read_tokens[0].value
+        if parser.strict and key in kwargs_keys:
+            raise nip.parser.ParserError(stream,
+                                         f"Dict key overwriting is forbidden in `strict` "
+                                         f"mode. Overwritten key: '{key}'.")
         stream.step()
 
         value = RightValue.read(stream, parser)
