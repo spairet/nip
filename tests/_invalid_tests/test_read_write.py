@@ -11,7 +11,7 @@ from nip.utils import deep_equals
 import builders
 
 
-class TestConfigLoadDump:
+class _TestConfigLoadDump:
     save_folder: Path
 
     @classmethod
