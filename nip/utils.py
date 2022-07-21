@@ -31,3 +31,23 @@ def deep_equals(first: Union[Dict, List, Any], second: Union[Dict, List, Any]):
     else:
         return first == second
     return True
+
+
+def iterate_items(obj):
+    if isinstance(obj, (list, tuple)):
+        for i, value in enumerate(obj):
+            yield i, value
+    if isinstance(obj, dict):
+        for key, value in obj.items():
+            yield key, value
+
+
+def flatten(obj, delimiter='.', keys=()):
+    if not isinstance(obj, (list, tuple, dict)):
+        return {delimiter.join(keys): obj}
+
+    result = {}
+    for key, value in iterate_items(obj):
+        result.update(
+            flatten(value, delimiter, keys=keys + (str(key),)))
+    return result
