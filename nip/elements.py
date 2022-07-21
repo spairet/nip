@@ -100,6 +100,7 @@ class Value(Element):
             tokens.Bool,
             tokens.String,
             tokens.List,
+            tokens.TupleToken,
             tokens.Dict
         ]
         for token in tokens_list:
