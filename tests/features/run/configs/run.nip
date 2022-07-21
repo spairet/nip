@@ -1,4 +1,4 @@
----
+obj: !SimpleClass
+  name: "some_name"
+  value: 14
 
-self: !SimpleClass
-  name: "qweqwe"

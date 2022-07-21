@@ -3,6 +3,5 @@ simple: &simple !SimpleClass
 
 f: !myfunc
   - 1
-  #- *simple
   b: 2
   #d: 3

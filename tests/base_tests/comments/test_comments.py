@@ -24,5 +24,4 @@ def test_comment():
 def test_empty():
     from nip import load
     res = load("base_tests/comments/configs/empty_comment.nip")
-    print(res, res.__class__)
     assert IS_NOTHING(res)
