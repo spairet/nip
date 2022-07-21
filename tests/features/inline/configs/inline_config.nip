@@ -1,6 +1,6 @@
 main: &main "Hello World!"
 iqwe: &i 2
-sdkichabskjchskjdhb: &qwe !load_numpy 1
+sdkichabskjchskjdhb: &qwe !load_numpy
 
 other: `f"hey ho {main}"`
 other_int: `i + 5`
