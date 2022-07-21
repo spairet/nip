@@ -3,19 +3,19 @@ from nip import load, parse, dump, construct
 import builders
 
 # Load config file as python object:
-result = load("../base_tests/tags/configs/simple_tag_config.nip")
+result = load("../tests/base_tests/tags/configs/simple_tag_config.nip")
 result['obj'].print()
 print(result['func'])
 
 
 # Load only part of config:
-tree = parse("../base_tests/tags/configs/simple_tag_config.nip")
+tree = parse("../tests/base_tests/tags/configs/simple_tag_config.nip")
 result = construct(tree['func'])
 print(result)
 
 
 # Parsing and saving config with iterators:
-configs = parse("../complex/configs/config.nip")
+configs = parse("../tests/complex/configs/config.nip")
 for config in configs:
     # get some staff from the deep
     print("3: ", config['other']['list'][3])
@@ -25,10 +25,10 @@ for config in configs:
 
 
 # You can always convert your parsed config to python without constructing:
-tree = parse("../base_tests/tags/configs/simple_tag_config.nip")
+tree = parse("../tests/base_tests/tags/configs/simple_tag_config.nip")
 print(tree.to_python())
 
-configs = next(parse("../complex/configs/config.nip"))  # get first config
+configs = next(parse("../tests/complex/configs/config.nip"))  # get first config
 print(configs['other'])
 print(configs['other'].to_python())
 

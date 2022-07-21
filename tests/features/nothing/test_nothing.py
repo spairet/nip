@@ -1,4 +1,4 @@
-from test_utils import NOTHING, deep_conditioned_compare
+from test_utils import NOTHING, deep_conditioned_compare, nothing_comparison
 
 
 def test_nothing():
