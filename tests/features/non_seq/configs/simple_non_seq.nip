@@ -1,0 +1,4 @@
+main: *main
+other_main: &main
+  just: some
+  values: 123

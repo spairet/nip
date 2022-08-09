@@ -162,7 +162,7 @@ class Link(Element):
             return None
 
         name = read_tokens[1].value
-        if name not in parser.links:
+        if parser.sequential_links and name not in parser.links:
             nip.parser.ParserError(stream, "Link usage before assignment")
         stream.step()
 
@@ -318,6 +318,12 @@ class Args(Element):
 
     def __len__(self):
         return len(self.value[0]) + len(self.value[1])
+
+    def __iter__(self):
+        for item in self.value[0]:
+            yield item
+        for key, item in self.value[1].items():
+            yield item
 
     def to_python(self):
         args = list(item.to_python() for item in self.value[0])
