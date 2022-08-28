@@ -42,14 +42,15 @@ def show(*args, **kwargs):
 
 
 def main(param, config):
-    print(param)
     print(dumps(config))
+    return param + " from main with love", dumps(config)
 
 
 @nip("def_class")
 class ClassWithDefaults:
     def __init__(self, name: str = "something"):
         self.name = name
+
 
 class Note:
     def __init__(self, name, comment):
@@ -61,3 +62,9 @@ class Note:
 
     def __eq__(self, other):
         return self.name == other.name and self.comment == other.comment
+
+
+@nip(['first_tag', 'second_tag'])
+class MultiTagClass:
+    def __init__(self, name: str = ''):
+        self.name = name

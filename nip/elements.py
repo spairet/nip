@@ -34,9 +34,6 @@ class Element(ABC):
     def __getitem__(self, item):
         return self.value[item]
 
-    def __iter__(self):
-        return iter(self.value)
-
     def __setitem__(self, key, value):
         self.value[key] = value
 
@@ -74,7 +71,10 @@ class Document(Element):  # ToDo: add multi document support
         return ''
 
     def dump(self, dumper: nip.dumper.Dumper):
-        return "--- " + self.name + " " + self.value.dump(dumper)
+        string = "---"
+        if self.name:
+            string += " " + self.name + " "
+        return string + self.value.dump(dumper)
 
 
 class RightValue(Element):
@@ -146,7 +146,7 @@ class LinkCreation(Element):
 
         value = RightValue.read(stream, parser)
         if name in parser.links:
-            raise nip.parser.ParserError(f"Redefining of link '{name}'")
+            raise nip.parser.ParserError(stream, f"Redefining of link '{name}'")
         parser.links.append(name)
 
         return LinkCreation(name, value)
@@ -324,11 +324,11 @@ class Args(Element):
     def __len__(self):
         return len(self.value[0]) + len(self.value[1])
 
-    def __iter__(self):
-        for arg in self.value[0]:
-            yield arg
-        for key, item in self.value[1].items():
-            yield item
+    # def __iter__(self):
+    #     for arg in self.value[0]:
+    #         yield arg
+    #     for key, item in self.value[1].items():
+    #         yield item
 
     def to_python(self):
         args = list(item.to_python() for item in self.value[0])
