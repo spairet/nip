@@ -1,0 +1,5 @@
+just_a_list:
+  - 1
+  - 2
+  - 'c'
+  - *var  # can't be loaded by itself.

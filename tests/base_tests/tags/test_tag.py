@@ -57,3 +57,15 @@ def test_no_args():
     with pytest.raises(TypeError,
                        match="missing 1 required positional argument:"):
         load("base_tests/tags/configs/no_args_func_error.nip")
+
+
+def test_multi_tag():
+    import builders
+    from nip import load
+    result = load("base_tests/tags/configs/multi_tag.nip")
+    assert 'first_object' in result \
+           and isinstance(result['first_object'], builders.MultiTagClass) \
+           and result['first_object'].name == 'abc'
+    assert 'second_object' in result \
+           and isinstance(result['second_object'], builders.MultiTagClass) \
+           and result['second_object'].name == 'cba'

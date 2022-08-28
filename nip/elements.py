@@ -3,9 +3,10 @@ from __future__ import annotations
 
 import logging
 
-import nip.parser  # This import pattern because of cycle imports
+import nip.constructor  # This import pattern because of cycle imports
+import nip.directives
 import nip.dumper
-import nip.constructor
+import nip.parser
 import nip.stream
 import nip.tokens as tokens
 import nip.utils
@@ -32,6 +33,9 @@ class Element(ABC):
 
     def __getitem__(self, item):
         return self.value[item]
+
+    def __iter__(self):
+        return iter(self.value)
 
     def __setitem__(self, key, value):
         self.value[key] = value
@@ -73,7 +77,8 @@ class Document(Element):  # ToDo: add multi document support
 class RightValue(Element):
     @classmethod
     def read(cls, stream: nip.stream.Stream, parser: nip.parser.Parser) -> Element:
-        value = LinkCreation.read(stream, parser) or \
+        value = Directive.read(stream, parser) or \
+                LinkCreation.read(stream, parser) or \
                 Link.read(stream, parser) or \
                 Tag.read(stream, parser) or \
                 Iter.read(stream, parser) or \
@@ -315,6 +320,12 @@ class Args(Element):
     def __len__(self):
         return len(self.value[0]) + len(self.value[1])
 
+    def __iter__(self):
+        for arg in self.value[0]:
+            yield arg
+        for key, item in self.value[1].items():
+            yield item
+
     def to_python(self):
         args = list(item.to_python() for item in self.value[0])
         kwargs = {key: value.to_python() for key, value in self.value[1].items()}
@@ -470,3 +481,18 @@ class FString(Element):  # Includes f-string and r-string
 
     def to_python(self):
         return f"f{self.value}"
+
+
+class Directive(Element):
+    @classmethod
+    def read(cls, stream: nip.stream.Stream, parser: nip.parser.Parser) -> \
+            Union[FString, None]:
+        read_tokens = stream.peek(tokens.Operator('!!'), tokens.Name)
+        if read_tokens is None:
+            return None
+        name = read_tokens[1].value
+        stream.step()
+
+        value = RightValue.read(stream, parser)
+
+        return nip.directives.call_directive(name, value, stream)

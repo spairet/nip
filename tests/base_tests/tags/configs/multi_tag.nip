@@ -1,0 +1,5 @@
+first_object: !first_tag
+  name: abc
+
+second_object: !second_tag
+  name: cba

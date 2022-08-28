@@ -50,3 +50,9 @@ def main(param, config):
 class ClassWithDefaults:
     def __init__(self, name: str = "something"):
         self.name = name
+
+
+@nip(['first_tag', 'second_tag'])
+class MultiTagClass:
+    def __init__(self, name: str = ""):
+        self.name = name
