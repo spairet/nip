@@ -7,7 +7,6 @@ main: &main
   second: [1, 2, 3]
 
   third: {'a': "123", '123': "qweqwe"}
-  inline_tuple: (17, 32, 42, 'name')
 
 
 other:
@@ -20,9 +19,9 @@ other:
     sdf:
       - sfds:
           abra: @
-              - "cadabra"
-              - "ababra"
-              - "avocado"
+            - "cadabra"
+            - "ababra"
+            - "avocado"
       - - nested value
         - one more
         - nested: dict

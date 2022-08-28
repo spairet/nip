@@ -20,7 +20,8 @@ def test_config():
             'third': {
                 'a': "123",
                 '123': "qweqwe"
-            }
+            },
+            'inline_tuple': (17, 32, 42, 'name')
         },
         'other': {
             'main.other': {
@@ -32,7 +33,8 @@ def test_config():
                 'third': {
                   'a': "123",
                   '123': "qweqwe"
-                }
+                },
+                'inline_tuple': (17, 32, 42, 'name')
             },
             'list': (
                 [

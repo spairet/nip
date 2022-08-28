@@ -128,7 +128,7 @@ class Name(String):
 
 
 class Operator(Token):
-    operators = ['---', '@', '#', '&', '!!', '!', '- ', ': ', '*', '{', '}', '[', ']', '!!']
+    operators = ['---', '@', '#', '&', '!!', '!', '- ', ': ', '*', '{', '}', '[', ']', '(', ')']
 
     @staticmethod
     def read(stream: str) -> Tuple[int, Union[None, Operator]]:
@@ -165,6 +165,21 @@ class List(Token):
             pos += 1
         if stream[pos] != ']':
             raise TokenError('List was not closed')
+        pos += 1
+        read_list = eval(stream[:pos])
+        return pos, List(read_list)
+
+
+class TupleToken(Token):
+    @staticmethod
+    def read(stream: str) -> Tuple[int, Union[None, List]]:
+        pos = 0
+        if stream[pos] != '(':
+            return pos, None
+        while stream and stream[pos] != ')':
+            pos += 1
+        if stream[pos] != ')':
+            raise TokenError('Tuple was not closed')
         pos += 1
         read_list = eval(stream[:pos])
         return pos, List(read_list)
