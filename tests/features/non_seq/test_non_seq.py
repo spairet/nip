@@ -6,7 +6,7 @@ from nip.non_seq_constructor import NonSequentialConstructorError
 
 
 def test_simple_non_seq():
-    output = load("features/non_seq/configs/simple_non_seq.nip", nonsequantial=True)
+    output = load("features/non_seq/configs/simple_non_seq.nip", nonsequential=True)
     expected = {
         'main': {
             'just': 'some',
@@ -21,7 +21,7 @@ def test_simple_non_seq():
 
 
 def test_harder_non_seq():
-    output = load("features/non_seq/configs/harder_non_seq.nip", nonsequantial=True)
+    output = load("features/non_seq/configs/harder_non_seq.nip", nonsequential=True)
     expected = {
         'main': [
             'some',
@@ -54,11 +54,11 @@ def test_part_harder_non_seq():
 
 def test_recursive_non_seq():
     with pytest.raises(NonSequentialConstructorError, match="Recursive construction"):
-        load("features/non_seq/configs/recursive_non_seq.nip", nonsequantial=True)
+        load("features/non_seq/configs/recursive_non_seq.nip", nonsequential=True)
 
 
 def test_inline_non_seq():
-    output = nip.load("features/non_seq/configs/inline_non_seq.nip", nonsequantial=True)
+    output = nip.load("features/non_seq/configs/inline_non_seq.nip", nonsequential=True)
     expected = {
         'main': [
             "some f string with var 12",
