@@ -29,7 +29,10 @@ class Parser:  # mb: we don't need Parser itself. its just storage for links and
 
     def parse_string(self, string):
         stream = Stream(string)  # mb: add stream to parser and log errors more convenient
-        return elements.Document.read(stream, self)
+        tree = elements.Document.read(stream, self)
+        if stream:
+            raise ParserError(stream, "Wrong statement.")
+        return tree
 
     def has_iterators(self) -> bool:
         return len(self.iterators) > 0
