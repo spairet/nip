@@ -4,7 +4,7 @@ import importlib.util
 import inspect
 import typeguard
 
-from typing import Callable, Optional, Union, List
+from typing import Callable, Optional, Union, List, Tuple
 from types import FunctionType, ModuleType, BuiltinFunctionType
 from multipledispatch import dispatch
 
@@ -77,7 +77,11 @@ def nip_decorator(name=None, wrap_call=False):
             assert isinstance(item, type), "Call wrapping supported only for class type"
             item = call_wrapper(item)
         local_name = name or item.__name__
-        global_builders[local_name] = item
+        if isinstance(local_name, (list, tuple)):
+            for n in local_name:
+                global_builders[n] = item
+        else:
+            global_builders[local_name] = item
         return item
 
     return _
@@ -87,6 +91,15 @@ def nip_decorator(name=None, wrap_call=False):
 def nip(name: str, wrap_call: bool = False):
     """Wrapper to register function or class with specified name."""
     return nip_decorator(name, wrap_call)
+
+
+@dispatch([(list, tuple)])
+def nip(names: Union[List[str], Tuple[str]], wrap_call: bool = False):
+    """Wrapper to register function or class with specified name."""
+    assert len(names) > 0, "Tag list should be nonempty"
+    for name in names:
+        assert isinstance(name, str), "Every specified Tag should be string."
+    return nip_decorator(names, wrap_call)
 
 
 @dispatch()

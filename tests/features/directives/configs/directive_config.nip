@@ -1,0 +1,7 @@
+var: &var 123
+
+main:
+  just: 'some_stuff'
+  inserted: &l !!insert 'features/directives/configs/loaded_config.nip'
+
+loaded_copy: *l
