@@ -1,0 +1,12 @@
+var: &var 123
+
+main:
+  just: 'some_stuff'
+  inserted: &l
+    just_a_list:
+      - 1
+      - 2
+      - 'c'
+      - *var  # can't be loaded by itself.
+
+loaded_copy: *l

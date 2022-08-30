@@ -3,9 +3,10 @@ from __future__ import annotations
 
 import logging
 
-import nip.parser  # This import pattern because of cycle imports
+import nip.constructor  # This import pattern because of cycle imports
+import nip.directives
 import nip.dumper
-import nip.constructor
+import nip.parser
 import nip.stream
 import nip.tokens as tokens
 import nip.utils
@@ -70,13 +71,17 @@ class Document(Element):  # ToDo: add multi document support
         return ''
 
     def dump(self, dumper: nip.dumper.Dumper):
-        return "--- " + self.name + " " + self.value.dump(dumper)
+        string = "---"
+        if self.name:
+            string += " " + self.name + " "
+        return string + self.value.dump(dumper)
 
 
 class RightValue(Element):
     @classmethod
     def read(cls, stream: nip.stream.Stream, parser: nip.parser.Parser) -> Element:
-        value = LinkCreation.read(stream, parser) or \
+        value = Directive.read(stream, parser) or \
+                LinkCreation.read(stream, parser) or \
                 Link.read(stream, parser) or \
                 Tag.read(stream, parser) or \
                 Iter.read(stream, parser) or \
@@ -141,7 +146,7 @@ class LinkCreation(Element):
 
         value = RightValue.read(stream, parser)
         if name in parser.links:
-            raise nip.parser.ParserError(f"Redefining of link '{name}'")
+            raise nip.parser.ParserError(stream, f"Redefining of link '{name}'")
         parser.links.append(name)
 
         return LinkCreation(name, value)
@@ -319,6 +324,12 @@ class Args(Element):
     def __len__(self):
         return len(self.value[0]) + len(self.value[1])
 
+    # def __iter__(self):
+    #     for arg in self.value[0]:
+    #         yield arg
+    #     for key, item in self.value[1].items():
+    #         yield item
+
     def to_python(self):
         args = list(item.to_python() for item in self.value[0])
         kwargs = {key: value.to_python() for key, value in self.value[1].items()}
@@ -479,3 +490,18 @@ class FString(Element):  # Includes f-string and r-string
 
     def to_python(self):
         return f"f{self.value}"
+
+
+class Directive(Element):
+    @classmethod
+    def read(cls, stream: nip.stream.Stream, parser: nip.parser.Parser) -> \
+            Union[FString, None]:
+        read_tokens = stream.peek(tokens.Operator('!!'), tokens.Name)
+        if read_tokens is None:
+            return None
+        name = read_tokens[1].value
+        stream.step()
+
+        value = RightValue.read(stream, parser)
+
+        return nip.directives.call_directive(name, value, stream)
