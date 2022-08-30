@@ -6,6 +6,7 @@ import logging
 import nip.constructor  # This import pattern because of cycle imports
 import nip.directives
 import nip.dumper
+import nip.non_seq_constructor as nsc
 import nip.parser
 import nip.stream
 import nip.tokens as tokens
@@ -167,7 +168,7 @@ class Link(Element):
             return None
 
         name = read_tokens[1].value
-        if name not in parser.links:
+        if parser.sequential_links and name not in parser.links:
             nip.parser.ParserError(stream, "Link usage before assignment")
         stream.step()
 
@@ -324,11 +325,11 @@ class Args(Element):
     def __len__(self):
         return len(self.value[0]) + len(self.value[1])
 
-    # def __iter__(self):
-    #     for arg in self.value[0]:
-    #         yield arg
-    #     for key, item in self.value[1].items():
-    #         yield item
+    def __iter__(self):
+        for item in self.value[0]:
+            yield item
+        for key, item in self.value[1].items():
+            yield item
 
     def to_python(self):
         args = list(item.to_python() for item in self.value[0])
@@ -435,6 +436,7 @@ class InlinePython(Element):
         return InlinePython(value=exec_string)
 
     def construct(self, constructor: nip.constructor.Constructor):
+        nsc.preload_vars(self.value, constructor)
         locals().update(constructor.vars)
         return eval(self.value)
 
@@ -482,6 +484,7 @@ class FString(Element):  # Includes f-string and r-string
         return FString(value=string)
 
     def construct(self, constructor: nip.constructor.Constructor):
+        nsc.preload_vars(f"f{self.value}", constructor)
         locals().update(constructor.vars)
         return eval(f"f{self.value}")
 

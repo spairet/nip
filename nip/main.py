@@ -4,6 +4,7 @@ from pathlib import Path
 
 from .parser import Parser
 from .constructor import Constructor, ConstructorError
+from .non_seq_constructor import NonSequentialConstructor
 from .iter_parser import IterParser
 from .dumper import Dumper
 from .convertor import Convertor
@@ -39,7 +40,8 @@ def parse(path: Union[str, Path], always_iter: bool = False,
 
 
 def construct(tree: elements.Element,
-              strict_typing: bool = False) -> Any:
+              strict_typing: bool = False,
+              nonsequential: bool = False) -> Any:
     """Constructs python object based on config and known nip-objects
 
     Parameters
@@ -48,12 +50,17 @@ def construct(tree: elements.Element,
         Read config tree.
     strict_typing:
         If True, raises Exception when typing mismatch.
+    nonsequential:
+        If True, allows to use links before creation.
 
     Returns
     -------
     obj: Any
     """
-    constructor = Constructor(strict_typing=strict_typing)
+    if nonsequential:
+        constructor = NonSequentialConstructor(tree, strict_typing=strict_typing)
+    else:
+        constructor = Constructor(strict_typing=strict_typing)
     return constructor.construct(tree)
 
 
@@ -64,7 +71,8 @@ def _iter_load(configs, strict_typing):  # Otherwise load() will always be an it
 
 def load(path: Union[str, Path],
          always_iter: bool = False,
-         strict: bool = False) -> Union[Any, Iterable[Any]]:
+         strict: bool = False,
+         nonsequantial: bool = False) -> Union[Any, Iterable[Any]]:
     """Parses config and constructs python object
     Parameters
     ----------
@@ -74,6 +82,8 @@ def load(path: Union[str, Path],
         If True will always return iterator over configs.
     strict:
         If True, raises Exception when typing mismatch or overwriting dict key.
+    nonsequantial:
+        If True, allows to use links before creation.
 
     Returns
     -------
@@ -84,7 +94,7 @@ def load(path: Union[str, Path],
     if isinstance(config, Iterable):
         return _iter_load(config, strict)
 
-    return construct(config, strict)
+    return construct(config, strict, nonsequantial)
 
 
 def dump(path: Union[str, Path], obj: Union[elements.Element, object]):

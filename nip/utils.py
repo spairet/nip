@@ -1,3 +1,4 @@
+import ast
 import inspect
 import typeguard
 
@@ -51,3 +52,4 @@ def flatten(obj, delimiter='.', keys=()):
         result.update(
             flatten(value, delimiter, keys=keys + (str(key),)))
     return result
+

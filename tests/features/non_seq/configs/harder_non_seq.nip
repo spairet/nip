@@ -1,0 +1,12 @@
+main:
+  - some
+  - 123
+  - items: &it
+      - 4
+      - 5
+      - *ll
+      - 7
+
+other_main:
+  iteresting: *it
+  here_is_the_ll: &ll 6
