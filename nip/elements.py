@@ -324,11 +324,11 @@ class Args(Element):
     def __len__(self):
         return len(self.value[0]) + len(self.value[1])
 
-    # def __iter__(self):
-    #     for arg in self.value[0]:
-    #         yield arg
-    #     for key, item in self.value[1].items():
-    #         yield item
+    def __iter__(self):
+        for item in self.value[0]:
+            yield item
+        for key, item in self.value[1].items():
+            yield item
 
     def to_python(self):
         args = list(item.to_python() for item in self.value[0])
