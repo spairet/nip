@@ -55,3 +55,23 @@ def test_part_harder_non_seq():
 def test_recursive_non_seq():
     with pytest.raises(NonSequentialConstructorError, match="Recursive construction"):
         load("features/non_seq/configs/recursive_non_seq.nip", nonsequantial=True)
+
+
+def test_inline_non_seq():
+    output = nip.load("features/non_seq/configs/inline_non_seq.nip", nonsequantial=True)
+    expected = {
+        'main': [
+            "some f string with var 12",
+            123,
+            {
+                'items': [4, 5, 6, 12]
+            }
+        ],
+        'other_main': {
+            'iteresting': [4, 5, 6, 12],
+            'here_is_the_ll': 6
+        },
+        'inline_python': 2.5,
+        't': 5
+    }
+    assert output == expected

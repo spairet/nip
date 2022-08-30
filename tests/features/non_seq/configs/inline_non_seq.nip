@@ -1,1 +1,16 @@
 ## add test with inline expressions like `model.parameters()`
+main:
+  - f"some f string with var {v}"
+  - 123
+  - items: &it
+      - 4
+      - 5
+      - *ll
+      - &v 12
+
+other_main:
+  iteresting: *it
+  here_is_the_ll: &ll 6
+
+inline_python: `int(t) / 2`
+t: &t 5

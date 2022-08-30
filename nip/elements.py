@@ -6,6 +6,7 @@ import logging
 import nip.constructor  # This import pattern because of cycle imports
 import nip.directives
 import nip.dumper
+import nip.non_seq_constructor as nsc
 import nip.parser
 import nip.stream
 import nip.tokens as tokens
@@ -435,6 +436,7 @@ class InlinePython(Element):
         return InlinePython(value=exec_string)
 
     def construct(self, constructor: nip.constructor.Constructor):
+        nsc.preload_vars(self.value, constructor)
         locals().update(constructor.vars)
         return eval(self.value)
 
@@ -482,6 +484,7 @@ class FString(Element):  # Includes f-string and r-string
         return FString(value=string)
 
     def construct(self, constructor: nip.constructor.Constructor):
+        nsc.preload_vars(f"f{self.value}", constructor)
         locals().update(constructor.vars)
         return eval(f"f{self.value}")
 
