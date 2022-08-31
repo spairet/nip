@@ -25,7 +25,8 @@ class VarsDict:
         return self.vars[item]
 
     def __setitem__(self, key, value):
-        self.vars[key] = value
+        if key not in self.vars:  # was not constructed earlier
+            self.vars[key] = value
 
     def __iter__(self):
         return iter(self.vars)
