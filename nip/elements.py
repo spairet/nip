@@ -84,6 +84,7 @@ class RightValue(Element):
         value = Directive.read(stream, parser) or \
                 LinkCreation.read(stream, parser) or \
                 Link.read(stream, parser) or \
+                Class.read(stream, parser) or \
                 Tag.read(stream, parser) or \
                 Iter.read(stream, parser) or \
                 Args.read(stream, parser) or \
@@ -226,6 +227,31 @@ class Tag(Element):
 
     def dump(self, dumper: nip.dumper.Dumper):
         return f"!{self.name} " + self.value.dump(dumper)
+
+
+class Class(Element):
+    @classmethod
+    def read(cls, stream: nip.stream.Stream, parser: nip.parser.Parser) -> Union[Class, None]:
+        read_tokens = stream.peek(tokens.Operator('!&'), tokens.Name)
+        if read_tokens is None:
+            return None
+        name = read_tokens[1].value
+        stream.step()
+
+        value = RightValue.read(stream, parser)
+        if not isinstance(value, Nothing):
+            raise nip.parser.ParserError(stream, "Class should be created with nothing to the right.")
+
+        return Class(name, value)
+
+    def construct(self, constructor: nip.constructor.Constructor):
+        value = self.value.construct(constructor)
+        assert isinstance(value, Nothing), "Unexpected right value while constructing Class"
+
+        return constructor.builders[self.name]
+
+    def dump(self, dumper: nip.dumper.Dumper):
+        return f"!&{self.name} " + self.value.dump(dumper)
 
 
 class Args(Element):
