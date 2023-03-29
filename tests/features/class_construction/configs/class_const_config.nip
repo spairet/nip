@@ -1,0 +1,6 @@
+var: &var 123
+
+main:
+  just: 'some_stuff'
+  simple_class: !&SimpleClass
+  def_class: !&def_class
