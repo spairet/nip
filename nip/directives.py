@@ -1,17 +1,34 @@
 """Contains nip directives."""
 
 
-import nip.parser  # This import pattern because of cycle imports
-import nip.elements
-import nip.constructor
-import nip.stream
+from .parser import Parser, ParserError
+from .constructor import Constructor
+from .stream import Stream
 
 
-def insert_directive(path: str):
-    assert isinstance(path, str), "Load directive expects path as an argument."
-    parser = nip.parser.Parser()
-    config = parser.parse(path)  # nip.elements.Document
-    return config.value
+def insert_directive(right_value, stream: Stream):
+    from nip.elements import Value, Args
+    if isinstance(right_value, Value):
+        constructor = Constructor()
+        path = constructor.construct(right_value)
+        assert isinstance(path, str), "Load directive expects path as an argument."
+        parser = Parser()
+        config = parser.parse(path)  # Document
+        return config.value
+
+    elif isinstance(right_value, Args):
+        assert len(right_value.value[0]) == 1, "only single positional argument will be treated as config path."
+        constructor = Constructor()
+        path = constructor.construct(right_value.value[0][0])
+        assert isinstance(path, str), "Load directive expects path as first argument."
+        parser = Parser()
+        parser.link_replacements = right_value.value[1]
+        config = parser.parse(path)  # Document
+        return config.value
+
+    else:
+        raise ParserError(
+            stream, "string or combination of arg and **kwargs are expected as value of !!insert directive")
 
 
 _directives = {
@@ -19,15 +36,7 @@ _directives = {
 }
 
 
-def call_directive(name, right_value, stream: nip.stream.Stream):
+def call_directive(name, right_value, stream: Stream):
     if name not in _directives:
-        raise nip.parser.ParserError(stream, f"Unknown parser directive '{name}'.")
-    constructor = nip.constructor.Constructor()
-    args = constructor.construct(right_value)
-    if isinstance(args, dict):  # mb: check what constructed dict? Args or any dict?
-        return _directives[name](**args)
-    if isinstance(args, (list, tuple)):
-        return _directives[name](*args)
-    if args is None:  # mb: check Nothing. (copy paste all the stuff from !Tag)
-        return _directives[name]()
-    return _directives[name](args)
+        raise ParserError(stream, f"Unknown parser directive '{name}'.")
+    return _directives[name](right_value, stream)

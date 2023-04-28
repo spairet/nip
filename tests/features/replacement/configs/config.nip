@@ -1,0 +1,9 @@
+object: &obj !SimpleClass
+  name: abra
+
+value: &value 123
+
+inserted: !!insert
+  - "features/replacement/configs/sub_config.nip"
+  object: *obj
+  key: secret-key
