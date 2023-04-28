@@ -1,7 +1,5 @@
 import symtable
 
-import nip.elements
-
 from .constructor import Constructor, ConstructorError
 
 
@@ -49,13 +47,14 @@ class NonSequentialConstructor(Constructor):
         self._find_links(base_config)
 
     def _find_links(self, node: "nip.elements.Element"):
-        if isinstance(node, nip.elements.LinkCreation):
+        from .elements import Args, Element, LinkCreation
+        if isinstance(node, LinkCreation):
             assert node.name not in self.links, "Redefined link."
             self.links[node.name] = node
-        if isinstance(node, nip.elements.Args):
+        if isinstance(node, Args):
             for sub_node in node:
                 self._find_links(sub_node)
-        if isinstance(node.value, nip.elements.Element):
+        if isinstance(node.value, Element):
             self._find_links(node.value)
 
 

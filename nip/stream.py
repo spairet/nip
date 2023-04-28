@@ -1,4 +1,4 @@
-import nip.tokens as tokens
+from . import tokens as tokens
 
 from typing import Union, List, Type
 
