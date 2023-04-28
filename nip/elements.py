@@ -1,5 +1,5 @@
 """Contains all the elements of nip config files"""
-from __future__ import annotations
+# from __future__ import annotations
 
 import logging
 
@@ -26,7 +26,7 @@ class Element(ABC):
 
     @classmethod
     @abstractmethod
-    def read(cls, stream: nip.stream.Stream, parser: nip.parser.Parser) -> Union[Element, None]:
+    def read(cls, stream: "nip.stream.Stream", parser: "nip.parser.Parser") -> Union["Element", None]:
         pass
 
     def __str__(self):
@@ -41,7 +41,7 @@ class Element(ABC):
     def to_python(self):
         return self.value.to_python()
 
-    def construct(self, constructor: nip.constructor.Constructor):
+    def construct(self, constructor: "nip.constructor.Constructor"):
         return self.value.construct(constructor)
 
     def dump(self, dumper: nip.dumper.Dumper):
@@ -56,13 +56,13 @@ class Element(ABC):
 
 class Document(Element):  # ToDo: add multi document support
     @classmethod
-    def read(cls, stream: nip.stream.Stream, parser: nip.parser.Parser) -> Document:
+    def read(cls, stream: "nip.stream.Stream", parser: "nip.parser.Parser") -> "Document":
         doc_name = cls._read_name(stream)
         content = RightValue.read(stream, parser)
         return Document(doc_name, content)
 
     @classmethod
-    def _read_name(cls, stream: nip.stream.Stream):
+    def _read_name(cls, stream: "nip.stream.Stream"):
         read_tokens = stream.peek(tokens.Operator('---'), tokens.Name) or \
                       stream.peek(tokens.Operator('---'))
         if read_tokens is not None:
@@ -80,7 +80,7 @@ class Document(Element):  # ToDo: add multi document support
 
 class RightValue(Element):
     @classmethod
-    def read(cls, stream: nip.stream.Stream, parser: nip.parser.Parser) -> Element:
+    def read(cls, stream: "nip.stream.Stream", parser: "nip.parser.Parser") -> Element:
         value = Directive.read(stream, parser) or \
                 LinkCreation.read(stream, parser) or \
                 Link.read(stream, parser) or \
@@ -101,7 +101,7 @@ class RightValue(Element):
 
 class Value(Element):
     @classmethod
-    def read(cls, stream: nip.stream.Stream, parser: nip.parser.Parser) -> Union[None, Value]:
+    def read(cls, stream: "nip.stream.Stream", parser: "nip.parser.Parser") -> Union[None, "Value"]:
         tokens_list = [
             tokens.Number,
             tokens.Bool,
@@ -121,7 +121,7 @@ class Value(Element):
     def to_python(self):
         return self.value
 
-    def construct(self, constructor: nip.constructor.Constructor):
+    def construct(self, constructor: "nip.constructor.Constructor"):
         return self.value
 
     def dump(self, dumper: nip.dumper.Dumper):
@@ -135,11 +135,11 @@ class Value(Element):
 
 class LinkCreation(Element):
     @classmethod
-    def read(cls, stream: nip.stream.Stream, parser: nip.parser.Parser) -> Union[Element, None]:
+    def read(cls, stream: "nip.stream.Stream", parser: "nip.parser.Parser") -> Union[Element, None]:
         read_tokens = stream.peek(tokens.Operator('&'), tokens.Name)
         if read_tokens is None:
             # if stream.peek(tokens.Operator('&')):  # mb: do it more certainly: peak operator
-            #     raise nip.parser.ParserError(      # mb: firstly and then choose class to read)
+            #     raise "nip.parser.Parser"Error(      # mb: firstly and then choose class to read)
             #         stream, "Found variable creation operator '&' but name is not specified")
             return None
 
@@ -147,13 +147,13 @@ class LinkCreation(Element):
         stream.step()
 
         value = RightValue.read(stream, parser)
-        if name in parser.links:
+        if name in parser.link_names:
             raise nip.parser.ParserError(stream, f"Redefining of link '{name}'")
-        parser.links.append(name)
+        parser.link_names.append(name)
 
         return LinkCreation(name, value)
 
-    def construct(self, constructor: nip.constructor.Constructor):
+    def construct(self, constructor: "nip.constructor.Constructor"):
         constructor.vars[self.name] = self.value.construct(constructor)
         return constructor.vars[self.name]
 
@@ -163,22 +163,26 @@ class LinkCreation(Element):
 
 class Link(Element):
     @classmethod
-    def read(cls, stream: nip.stream.Stream, parser: nip.parser.Parser) -> Union[Element, None]:
+    def read(cls, stream: "nip.stream.Stream", parser: "nip.parser.Parser") -> Union[Element, None]:
         read_tokens = stream.peek(tokens.Operator('*'), tokens.Name)
         if read_tokens is None:
             return None
 
         name = read_tokens[1].value
-        if parser.sequential_links and name not in parser.links:
-            nip.parser.ParserError(stream, "Link usage before assignment")
         stream.step()
+
+        if name in parser.link_replacements:
+            return parser.link_replacements[name]
+
+        if parser.sequential_links and name not in parser.link_names:
+            nip.parser.ParserError(stream, "Link usage before assignment")
 
         return Link(name)
 
     def to_python(self):
         return "nil"  # something that means that object is not constructed yet.
 
-    def construct(self, constructor: nip.constructor.Constructor):
+    def construct(self, constructor: "nip.constructor.Constructor"):
         return constructor.vars[self.name]
 
     def dump(self, dumper: nip.dumper.Dumper):
@@ -187,7 +191,7 @@ class Link(Element):
 
 class Tag(Element):
     @classmethod
-    def read(cls, stream: nip.stream.Stream, parser: nip.parser.Parser) -> Union[Tag, None]:
+    def read(cls, stream: "nip.stream.Stream", parser: "nip.parser.Parser") -> Union["Tag", None]:
         read_tokens = stream.peek(tokens.Operator('!'), tokens.Name)
         if read_tokens is None:
             return None
@@ -198,7 +202,7 @@ class Tag(Element):
 
         return Tag(name, value)
 
-    def construct(self, constructor: nip.constructor.Constructor):
+    def construct(self, constructor: "nip.constructor.Constructor"):
         if isinstance(self.value, Args):
             args, kwargs = self.value.construct(constructor, always_pair=True)
         else:
@@ -231,7 +235,7 @@ class Tag(Element):
 
 class Class(Element):
     @classmethod
-    def read(cls, stream: nip.stream.Stream, parser: nip.parser.Parser) -> Union[Class, None]:
+    def read(cls, stream: "nip.stream.Stream", parser: "nip.parser.Parser") -> Union["Class", None]:
         read_tokens = stream.peek(tokens.Operator('!&'), tokens.Name)
         if read_tokens is None:
             return None
@@ -244,7 +248,7 @@ class Class(Element):
 
         return Class(name, value)
 
-    def construct(self, constructor: nip.constructor.Constructor):
+    def construct(self, constructor: "nip.constructor.Constructor"):
         value = self.value.construct(constructor)
         assert isinstance(value, Nothing), "Unexpected right value while constructing Class"
 
@@ -256,7 +260,7 @@ class Class(Element):
 
 class Args(Element):
     @classmethod
-    def read(cls, stream: nip.stream.Stream, parser: nip.parser.Parser) -> Union[Args, None]:
+    def read(cls, stream: "nip.stream.Stream", parser: "nip.parser.Parser") -> Union["Args", None]:
         start_indent = stream.pos
         if start_indent <= parser.last_indent:
             return None
@@ -292,7 +296,7 @@ class Args(Element):
         return Args("args", (args, kwargs))
 
     @classmethod
-    def _read_list_item(cls, stream: nip.stream.Stream, parser: nip.parser.Parser) \
+    def _read_list_item(cls, stream: "nip.stream.Stream", parser: "nip.parser.Parser") \
             -> Union[Element, None]:
         read_tokens = stream.peek(tokens.Operator('- '))
         if read_tokens is None:
@@ -304,7 +308,7 @@ class Args(Element):
         return value
 
     @classmethod
-    def _read_dict_pair(cls, stream: nip.stream.Stream, parser: nip.parser.Parser, kwargs_keys) \
+    def _read_dict_pair(cls, stream: "nip.stream.Stream", parser: "nip.parser.Parser", kwargs_keys) \
             -> Union[Tuple[str, Element], Tuple[None, None]]:
         # mb: read String instead of Name for keys with spaces,
         # mb: but this leads to the case that
@@ -368,7 +372,7 @@ class Args(Element):
             return result
         return args or kwargs
 
-    def construct(self, constructor: nip.constructor.Constructor, always_pair=False):
+    def construct(self, constructor: "nip.constructor.Constructor", always_pair=False):
         args = list(item.construct(constructor) for item in self.value[0])
         kwargs = {key: value.construct(constructor) for key, value in self.value[1].items()}
         assert args or kwargs, "Error converting Args node to python"  # This should never happen
@@ -399,7 +403,7 @@ class Iter(Element):
         # mb: name all the iterators and get the value from constructor rather then use this index
 
     @classmethod
-    def read(cls, stream: nip.stream.Stream, parser: nip.parser.Parser) -> Union[Iter, None]:
+    def read(cls, stream: "nip.stream.Stream", parser: "nip.parser.Parser") -> Union["Iter", None]:
         read_tokens = stream.peek(tokens.Operator('@'), tokens.Name) or \
                       stream.peek(tokens.Operator('@'))
         if read_tokens is None:
@@ -427,7 +431,7 @@ class Iter(Element):
             return self.value[self.return_index].to_python()
         return self.value[self.return_index]
 
-    def construct(self, constructor: nip.constructor.Constructor):
+    def construct(self, constructor: "nip.constructor.Constructor"):
         if self.return_index == -1:
             raise Exception("Iterator index was not specified by IterParser")
         if isinstance(self.value, list):
@@ -452,8 +456,8 @@ class Iter(Element):
 
 class InlinePython(Element):
     @classmethod
-    def read(cls, stream: nip.stream.Stream, parser: nip.parser.Parser) -> \
-            Union[InlinePython, None]:
+    def read(cls, stream: "nip.stream.Stream", parser: "nip.parser.Parser") -> \
+            Union["InlinePython", None]:
         read_tokens = stream.peek(tokens.InlinePython)
         if read_tokens is None:
             return None
@@ -461,7 +465,7 @@ class InlinePython(Element):
         exec_string = read_tokens[0].value
         return InlinePython(value=exec_string)
 
-    def construct(self, constructor: nip.constructor.Constructor):
+    def construct(self, constructor: "nip.constructor.Constructor"):
         nsc.preload_vars(self.value, constructor)
         locals().update(constructor.vars)
         return eval(self.value)
@@ -475,7 +479,7 @@ class InlinePython(Element):
 
 class Nothing(Element):
     @classmethod
-    def read(cls, stream: nip.stream.Stream, parser: nip.parser.Parser) -> Union[Nothing, None]:
+    def read(cls, stream: "nip.stream.Stream", parser: "nip.parser.Parser") -> Union["Nothing", None]:
         if not stream:
             return Nothing()
 
@@ -485,7 +489,7 @@ class Nothing(Element):
                 and indent <= parser.last_indent):
             return Nothing()
 
-    def construct(self, constructor: nip.constructor.Constructor):
+    def construct(self, constructor: "nip.constructor.Constructor"):
         return self
 
     def dump(self, dumper: nip.dumper.Dumper):
@@ -497,8 +501,8 @@ class Nothing(Element):
 
 class FString(Element):  # Includes f-string and r-string
     @classmethod
-    def read(cls, stream: nip.stream.Stream, parser: nip.parser.Parser) -> \
-            Union[FString, None]:
+    def read(cls, stream: "nip.stream.Stream", parser: "nip.parser.Parser") -> \
+            Union["FString", None]:
         read_tokens = stream.peek(tokens.PythonString)
         if read_tokens is None:
             return None
@@ -509,7 +513,7 @@ class FString(Element):  # Includes f-string and r-string
                   "You don't have to explicitly specify it.")
         return FString(value=string)
 
-    def construct(self, constructor: nip.constructor.Constructor):
+    def construct(self, constructor: "nip.constructor.Constructor"):
         nsc.preload_vars(f"f{self.value}", constructor)
         locals().update(constructor.vars)
         return eval(f"f{self.value}")
@@ -523,8 +527,8 @@ class FString(Element):  # Includes f-string and r-string
 
 class Directive(Element):
     @classmethod
-    def read(cls, stream: nip.stream.Stream, parser: nip.parser.Parser) -> \
-            Union[FString, None]:
+    def read(cls, stream: "nip.stream.Stream", parser: "nip.parser.Parser") -> \
+            Union["FString", None]:
         read_tokens = stream.peek(tokens.Operator('!!'), tokens.Name)
         if read_tokens is None:
             return None
