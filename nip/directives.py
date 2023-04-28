@@ -2,13 +2,13 @@
 
 
 import nip.parser  # This import pattern because of cycle imports
-import nip.elements
 import nip.constructor
 import nip.stream
 
 
 def insert_directive(right_value, stream: nip.stream.Stream):
-    if isinstance(right_value, nip.elements.Value):
+    from nip.elements import Value, Args
+    if isinstance(right_value, Value):
         constructor = nip.constructor.Constructor()
         path = constructor.construct(right_value)
         assert isinstance(path, str), "Load directive expects path as an argument."
@@ -16,7 +16,7 @@ def insert_directive(right_value, stream: nip.stream.Stream):
         config = parser.parse(path)  # nip.elements.Document
         return config.value
 
-    elif isinstance(right_value, nip.elements.Args):
+    elif isinstance(right_value, Args):
         assert len(right_value.value[0]) == 1, "only single positional argument will be treated as config path."
         constructor = nip.constructor.Constructor()
         path = constructor.construct(right_value.value[0][0])
