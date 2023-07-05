@@ -12,6 +12,7 @@ class Parser:  # mb: we don't need Parser itself. its just storage for links and
                  sequential_links: bool = False):
         self.links = []
         self.iterators = []
+        self.link_replacements = {}  # used with !!insert directive
         self.implicit_fstrings = implicit_fstrings
         self.strict = strict
         self.sequential_links = sequential_links

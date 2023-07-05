@@ -169,9 +169,13 @@ class Link(Element):
             return None
 
         name = read_tokens[1].value
+        stream.step()
+
+        if name in parser.link_replacements:
+            return parser.link_replacements[name]
+
         if parser.sequential_links and name not in parser.links:
             nip.parser.ParserError(stream, "Link usage before assignment")
-        stream.step()
 
         return Link(name)
 

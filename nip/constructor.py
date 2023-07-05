@@ -1,4 +1,4 @@
-# Constuctor of tagged objects
+# Constructor of tagged objects
 import importlib
 import importlib.util
 import inspect
@@ -181,4 +181,3 @@ def check_typing(func, args, kwargs) -> List[str]:
             messages.append(f"{name}: {e}")
 
     return messages
-
