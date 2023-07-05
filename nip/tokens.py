@@ -39,7 +39,7 @@ class TokenError(Exception):
 class Number(Token):
     @staticmethod
     def read(stream: str) -> Tuple[int, Union[None, Number]]:
-        string = Number._read_number_string(stream)
+        string = stream[:stream.find(' #')].strip()  # ignore comment
         value = None
         for t in (int, float):
             try:
@@ -72,7 +72,7 @@ class Number(Token):
 class Bool(Token):
     @staticmethod
     def read(stream: str) -> Tuple[int, Union[None, Bool]]:
-        string = stream[:].strip()
+        string = stream[:stream.find(' #')].strip()  # ignore comment
         if string in ['true', 'True', 'yes']:
             return len(string), Bool(True)
         if string in ["false", 'False', 'no']:
