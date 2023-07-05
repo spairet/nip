@@ -154,7 +154,8 @@ class LinkCreation(Element):
         return LinkCreation(name, value)
 
     def construct(self, constructor: nip.constructor.Constructor):
-        constructor.vars[self.name] = self.value.construct(constructor)
+        if nsc.should_construct(self.name, constructor):
+            constructor.vars[self.name] = self.value.construct(constructor)
         return constructor.vars[self.name]
 
     def dump(self, dumper: nip.dumper.Dumper):

@@ -1,4 +1,4 @@
-from nip import nip, dumps
+from nip import nip, dump_string
 
 
 @nip
@@ -42,8 +42,8 @@ def show(*args, **kwargs):
 
 
 def main(param, config):
-    print(dumps(config))
-    return param + " from main with love", dumps(config)
+    print(dump_string(config))
+    return param + " from main with love", dump_string(config)
 
 
 @nip("def_class")
