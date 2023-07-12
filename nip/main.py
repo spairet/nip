@@ -99,7 +99,7 @@ def construct(config: elements.Element,
 
 def _iter_load(configs, strict_typing, nonsequential):  # Otherwise load() will always be an iterator
     for config in configs:
-        yield construct(config, strict_typing, nonsequential)
+        yield construct(config, strict_typing=strict_typing, nonsequential=nonsequential)
 
 
 def load(path: Union[str, Path],
