@@ -12,6 +12,7 @@ def test_comment():
         'float': 0.314159265,
         'modern_float': 3e-5,
         'string': 'this is some string 123^& !',
+        'bool': True,
         'quated_string': "  !&and another one string 123 'qwe' @#!*^@%# "
     }
     assert 'other' in res

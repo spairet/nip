@@ -1,0 +1,22 @@
+--- MyDocument 
+main: &main 
+  first: "modified_value"
+  second: 
+    - 1
+    - 3
+  third: {'a': '123', '123': 'qweqwe'}
+other: 
+  main.other: *main
+  list: 
+    - f"this is float value {float}"
+    - True
+    - 
+    sdf: 
+      - 
+        sfds: 
+          abra: "cadabra"
+      - 
+        - "nested value"
+        - "one more"
+        - 
+          nested: "dict"

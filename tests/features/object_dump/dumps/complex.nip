@@ -1,0 +1,8 @@
+!Complex 
+- 
+  dict: "with"
+  some: "data"
+  number: 42
+- 
+  - !Small "Popo"
+  - !Small "Pepe"

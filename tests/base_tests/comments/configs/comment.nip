@@ -5,6 +5,7 @@ main: &asd  # comment after var creationg
   float: 0.314159265   #second inline comment
   modern_float: 3e-5     #comment after modern float
   string: this is some string 123^& !  #aaaand third one
+  bool: True  #4th simple comment
   quated_string: "  !&and another one string 123 'qwe' @#!*^@%# "  #and a comment of cause
 
 other: *asd  # comment after var usage

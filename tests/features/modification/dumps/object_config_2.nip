@@ -1,0 +1,7 @@
+---
+- !Note 
+  name: "first note"
+  comment: "nothing special here"
+- !Note 
+  name: "interesting note"
+  comment: "what a comment!"
