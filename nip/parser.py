@@ -1,5 +1,3 @@
-import nip.elements as elements
-
 from pathlib import Path
 from typing import Union
 
@@ -10,7 +8,7 @@ class Parser:  # mb: we don't need Parser itself. its just storage for links and
     def __init__(self, implicit_fstrings: bool = True,
                  strict: bool = False,
                  sequential_links: bool = False):
-        self.links = []
+        self.link_names = []
         self.iterators = []
         self.link_replacements = {}  # used with !!insert directive
         self.implicit_fstrings = implicit_fstrings
@@ -29,8 +27,9 @@ class Parser:  # mb: we don't need Parser itself. its just storage for links and
         return self.parse(path)
 
     def parse_string(self, string):
+        from .elements import Document
         stream = Stream(string)  # mb: add stream to parser and log errors more convenient
-        tree = elements.Document.read(stream, self)
+        tree = Document.read(stream, self)
         if stream:
             raise ParserError(stream, "Wrong statement.")
         return tree

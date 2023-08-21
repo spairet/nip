@@ -1,9 +1,7 @@
-from __future__ import annotations
+# from __future__ import annotations
 
 from abc import abstractmethod, ABC
 from typing import Tuple, Any, Union
-
-import nip.parser as parser
 
 
 class Token(ABC):
@@ -13,14 +11,14 @@ class Token(ABC):
 
     @staticmethod
     @abstractmethod
-    def read(stream: str) -> Tuple[int, Union[None, Token]]:
+    def read(stream: str) -> Tuple[int, Union[None, "Token"]]:
         pass
 
     def set_position(self, line, pos):
         self.line = line
         self.pos = pos
 
-    def __eq__(self, other: Token):
+    def __eq__(self, other: "Token"):
         return self.__class__ == other.__class__ and self.value == other.value
 
     @property
@@ -79,15 +77,9 @@ class Bool(Token):
             return len(string), Bool(False)
         return 0, None
 
-
-# class NoneType(Token):
-#     @staticmethod
-#     def read(stream: str) -> Tuple[int, Any]:
-#         string = stream[:strip]
-
 class String(Token):
     @staticmethod
-    def read(stream: str) -> Tuple[int, Union[None, String]]:
+    def read(stream: str) -> Tuple[int, Union[None, "String"]]:
         for op in Operator.operators:
             if stream.startswith(op):
                 return 0, None
@@ -115,7 +107,7 @@ class String(Token):
 
 class Name(String):
     @staticmethod
-    def read(stream: str) -> Tuple[int, Union[None, Name]]:
+    def read(stream: str) -> Tuple[int, Union[None, "Name"]]:
         pos = 0
         if not stream[pos].isalpha():
             return 0, None
@@ -131,7 +123,7 @@ class Operator(Token):
     operators = ['---', '@', '#', '&', '!&', '!!', '!', '- ', ': ', '*', '{', '}', '[', ']', '(', ')']
 
     @staticmethod
-    def read(stream: str) -> Tuple[int, Union[None, Operator]]:
+    def read(stream: str) -> Tuple[int, Union[None, "Operator"]]:
         for op in Operator.operators:
             if stream.startswith(op):
                 return len(op), Operator(op)
@@ -140,7 +132,7 @@ class Operator(Token):
 
 class Indent(Token):
     @staticmethod
-    def read(stream: str) -> Tuple[int, Union[None, Indent]]:
+    def read(stream: str) -> Tuple[int, Union[None, "Indent"]]:
         indent = 0
         pos = 0
         while stream[pos].isspace():
@@ -157,7 +149,7 @@ class Indent(Token):
 
 class List(Token):
     @staticmethod
-    def read(stream: str) -> Tuple[int, Union[None, List]]:
+    def read(stream: str) -> Tuple[int, Union[None, "List"]]:
         pos = 0
         if stream[pos] != '[':
             return pos, None
@@ -172,7 +164,7 @@ class List(Token):
 
 class TupleToken(Token):
     @staticmethod
-    def read(stream: str) -> Tuple[int, Union[None, List]]:
+    def read(stream: str) -> Tuple[int, Union[None, "List"]]:
         pos = 0
         if stream[pos] != '(':
             return pos, None
@@ -187,7 +179,7 @@ class TupleToken(Token):
 
 class Dict(Token):
     @staticmethod
-    def read(stream: str) -> Tuple[int, Union[None, Dict]]:
+    def read(stream: str) -> Tuple[int, Union[None, "Dict"]]:
         pos = 0
         if stream[pos] != '{':
             return pos, None
@@ -202,7 +194,7 @@ class Dict(Token):
 
 class InlinePython(Token):
     @staticmethod
-    def read(stream: str) -> Tuple[int, Union[None, InlinePython]]:
+    def read(stream: str) -> Tuple[int, Union[None, "InlinePython"]]:
         pos = 0
         if stream[pos] != '`':
             return pos, None
@@ -218,7 +210,7 @@ class InlinePython(Token):
 class PythonString(Token):
     @classmethod
     def read(cls, stream: str, implicit_fstrings: bool = False) -> \
-            Tuple[int, Union[None, PythonString]]:
+            Tuple[int, Union[None, "PythonString"]]:
         string = stream[:].strip()
         if implicit_fstrings and string[0] in "\"\'":
             if string[-1] != string[0]:
