@@ -1,5 +1,6 @@
 """Contains nip directives."""
 
+import nip.elements
 
 from .parser import Parser, ParserError
 from .constructor import Constructor
@@ -7,8 +8,7 @@ from .stream import Stream
 
 
 def insert_directive(right_value, stream: Stream):
-    from nip.elements import Value, Args
-    if isinstance(right_value, Value):
+    if isinstance(right_value, nip.elements.Value):
         constructor = Constructor()
         path = constructor.construct(right_value)
         assert isinstance(path, str), "Load directive expects path as an argument."
@@ -16,7 +16,7 @@ def insert_directive(right_value, stream: Stream):
         config = parser.parse(path)  # Document
         return config.value
 
-    elif isinstance(right_value, Args):
+    elif isinstance(right_value, nip.elements.Args):
         assert len(right_value.value[0]) == 1, "only single positional argument will be treated as config path."
         constructor = Constructor()
         path = constructor.construct(right_value.value[0][0])

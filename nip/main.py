@@ -39,34 +39,67 @@ def parse(path: Union[str, Path], always_iter: bool = False,
     return tree
 
 
-def construct(tree: elements.Element,
+def parse_string(config_string: str, always_iter: bool = False,
+                 implicit_fstrings: bool = True,
+                 strict: bool = False) -> \
+        Union[elements.Element, Iterable[elements.Element]]:
+    """Parses config providing Element tree
+
+    Parameters
+    ----------
+    config_string: str
+        Config as a string.
+    always_iter: bool
+        If True will always return iterator over configs.
+    implicit_fstrings: boot, default: True
+        If True, all quoted strings will be treated as python f-strings.
+    strict:
+        It True, checks overwriting dict keys and positioning (`args` before `kwargs`).
+
+    Returns
+    -------
+    tree: Element or Iterable[Element]
+    """
+    parser = Parser(implicit_fstrings=implicit_fstrings, strict=strict)
+    tree = parser.parse_string(config_string)
+    if parser.has_iterators() or always_iter:
+        return IterParser(parser).iter_configs(tree)
+    return tree
+
+
+def construct(config: elements.Element,
+              base_config: elements.Element = None,
               strict_typing: bool = False,
               nonsequential: bool = False) -> Any:
     """Constructs python object based on config and known nip-objects
 
     Parameters
     ----------
-    tree: Element
-        Read config tree.
+    config: Element
+        Config node to be constructed.
+    base_config:
+        Base config, in case of construction a part of a config with external links.
     strict_typing:
         If True, raises Exception when typing mismatch.
     nonsequential:
         If True, allows to use links before creation.
+        Always true if base_config is specified.
 
     Returns
     -------
     obj: Any
     """
-    if nonsequential:
-        constructor = NonSequentialConstructor(tree, strict_typing=strict_typing)
+    if nonsequential or base_config is not None:
+        base_config = base_config or config
+        constructor = NonSequentialConstructor(base_config, strict_typing=strict_typing)
     else:
         constructor = Constructor(strict_typing=strict_typing)
-    return constructor.construct(tree)
+    return constructor.construct(config)
 
 
 def _iter_load(configs, strict_typing, nonsequential):  # Otherwise load() will always be an iterator
     for config in configs:
-        yield construct(config, strict_typing, nonsequential)
+        yield construct(config, strict_typing=strict_typing, nonsequential=nonsequential)
 
 
 def load(path: Union[str, Path],
@@ -94,7 +127,35 @@ def load(path: Union[str, Path],
     if isinstance(config, Iterable):
         return _iter_load(config, strict, nonsequential)
 
-    return construct(config, strict, nonsequential)
+    return construct(config, strict_typing=strict, nonsequential=nonsequential)
+
+
+def load_string(config_string: str,
+                always_iter: bool = False,
+                strict: bool = False,
+                nonsequential: bool = False) -> Union[Any, Iterable[Any]]:
+    """Parses config and constructs python object
+    Parameters
+    ----------
+    config_string: str
+        Config as a string.
+    always_iter: bool
+        If True will always return iterator over configs.
+    strict:
+        If True, raises Exception when typing mismatch or overwriting dict key.
+    nonsequential:
+        If True, allows to use links before creation.
+
+    Returns
+    -------
+    obj: Any or Iterable[Any]
+    """
+    config = parse_string(config_string, always_iter, strict=strict)
+
+    if isinstance(config, Iterable):
+        return _iter_load(config, strict, nonsequential)
+
+    return construct(config, strict_typing=strict, nonsequential=nonsequential)
 
 
 def dump(path: Union[str, Path], obj: Union[elements.Element, object]):
@@ -113,8 +174,8 @@ def dump(path: Union[str, Path], obj: Union[elements.Element, object]):
     dumper.dump(path, obj)
 
 
-def dumps(obj: Union[elements.Element, object]) -> str:
-    """Dumps config tree to file.
+def dump_string(obj: Union[elements.Element, object]) -> str:
+    """Dumps config tree to string.
 
     Parameters
     ----------
@@ -175,7 +236,7 @@ def _single_run(config, func, verbose, return_values, return_configs, config_par
     if verbose:
         print("=" * 20)
         print("Running config:")
-        print(dumps(config))
+        print(dump_string(config))
         print("----")
 
     value = construct(config, strict, nonsequential)

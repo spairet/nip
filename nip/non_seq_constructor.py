@@ -77,3 +77,9 @@ def preload_vars(code, constructor: Constructor):
                 constructor.vars[name]
         except KeyError:
             pass
+
+
+def should_construct(name, constructor: Constructor):
+    if isinstance(constructor, NonSequentialConstructor):
+        return not (name in constructor.vars)
+    return True  # we can reconstruct

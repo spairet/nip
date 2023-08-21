@@ -1,6 +1,7 @@
 from typing import Dict, Optional, Callable, Union
 
-from .constructor import global_builders
+from nip.elements import Element, Args, Tag, Value
+from nip.constructor import global_builders
 
 global_convertors = {}
 
@@ -11,7 +12,7 @@ class Convertor:
         if load_globals:
             self._load_globals()
 
-    def convert(self, obj: object):
+    def convert(self, obj: object) -> Element:
         class_name = type(obj).__name__
         if class_name in self.convertors:
             tag, convertor = self.convertors[class_name]
@@ -85,6 +86,3 @@ def pin(class_name: str, tag: str):
         return item
 
     return _
-
-
-from .elements import Args, Tag, Value  # fixes cycle imports
