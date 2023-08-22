@@ -15,7 +15,7 @@ def test_strict_1():
     import builders
     from nip import load
     with pytest.raises(ConstructorError,
-                       match="c: str is not an instance of int"):
+                       match="type of c must be int; got str instead"):
         load("features/strict/configs/strict_func_types_1.nip", strict=True)
 
 
@@ -23,7 +23,7 @@ def test_strict_2():
     import builders
     from nip import load
     with pytest.raises(ConstructorError,
-                       match="a: builders.SimpleClass is not an instance of int"):
+                       match="type of a must be int; got builders.SimpleClass instead"):
         load("features/strict/configs/strict_func_types_2.nip", strict=True)
 
 
@@ -31,7 +31,7 @@ def test_strict_3():
     import builders
     from nip import load
     with pytest.raises(ConstructorError,
-                       match="name: int is not an instance of str"):
+                       match="type of name must be str; got int instead"):
         load("features/strict/configs/strict_func_types_3.nip", strict=True)
 
 

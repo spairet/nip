@@ -165,9 +165,9 @@ def check_typing(func, args, kwargs) -> List[str]:
         if param.annotation is inspect.Parameter.empty:
             continue
         try:
-            typeguard.check_type(arg, param.annotation)
-        except typeguard.TypeCheckError as e:
-            messages.append(f"{param.name}: {e}")
+            typeguard.check_type(param.name, arg, param.annotation)
+        except TypeError as e:
+            messages.append("- " + str(e))
 
     for name, value in kwargs.items():
         if name not in signature.parameters:
@@ -176,8 +176,8 @@ def check_typing(func, args, kwargs) -> List[str]:
         if annotation is inspect.Parameter.empty:
             continue
         try:
-            typeguard.check_type(value, annotation)
-        except typeguard.TypeCheckError as e:
-            messages.append(f"{name}: {e}")
+            typeguard.check_type(name, value, annotation)
+        except TypeError as e:
+            messages.append("- " + str(e))
 
     return messages
