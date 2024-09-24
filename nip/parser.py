@@ -1,15 +1,17 @@
-import nip.elements as elements
-
 from pathlib import Path
 from typing import Union
 
+import nip.elements as elements
 from .stream import Stream
 
 
 class Parser:  # mb: we don't need Parser itself. its just storage for links and tags. Hm...
-    def __init__(self, implicit_fstrings: bool = True,
-                 strict: bool = False,
-                 sequential_links: bool = False):
+    def __init__(
+        self,
+        implicit_fstrings: bool = True,
+        strict: bool = False,
+        sequential_links: bool = False,
+    ):
         self.links = []
         self.iterators = []
         self.link_replacements = {}  # used with !!insert directive
@@ -29,7 +31,9 @@ class Parser:  # mb: we don't need Parser itself. its just storage for links and
         return self.parse(path)
 
     def parse_string(self, string):
-        stream = Stream(string)  # mb: add stream to parser and log errors more convenient
+        stream = Stream(
+            string
+        )  # mb: add stream to parser and log errors more convenient
         tree = elements.Document.read(stream, self)
         if stream:
             raise ParserError(stream, "Wrong statement.")
@@ -39,7 +43,9 @@ class Parser:  # mb: we don't need Parser itself. its just storage for links and
         return len(self.iterators) > 0
 
 
-class ParserError(Exception):  # ToDo: currently blank lines skipped thus printed line mb wrong
+class ParserError(
+    Exception
+):  # ToDo: currently blank lines skipped thus printed line mb wrong
     def __init__(self, stream: Stream, msg: str):
         self.line = stream.n
         self.pos = stream.pos

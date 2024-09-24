@@ -1,8 +1,7 @@
 import symtable
 
 import nip.elements
-
-from .constructor import Constructor, ConstructorError
+from .constructor import Constructor
 
 
 class VarsDict:
@@ -39,10 +38,13 @@ class VarsDict:
 
 
 class NonSequentialConstructor(Constructor):
-    def __init__(self, base_config: "nip.elements.Element",
-                 ignore_rewriting=False,
-                 load_builders=True,
-                 strict_typing=False):
+    def __init__(
+        self,
+        base_config: "nip.elements.Element",
+        ignore_rewriting=False,
+        load_builders=True,
+        strict_typing=False,
+    ):
         super().__init__(ignore_rewriting, load_builders, strict_typing)
         self.vars = VarsDict(self)
         self.links = {}
@@ -70,7 +72,7 @@ class NonSequentialConstructorError(Exception):
 def preload_vars(code, constructor: Constructor):
     if not isinstance(constructor, NonSequentialConstructor):
         return
-    table = symtable.symtable(code, 'string', 'exec')
+    table = symtable.symtable(code, "string", "exec")
     for name in constructor.links:
         try:
             if table.lookup(name).is_global():

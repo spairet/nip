@@ -1,20 +1,33 @@
-from typing import Union, Any, Iterable, Callable, Optional
 from pathlib import Path
+from typing import Union, Any, Iterable, Callable, Optional
 
-
-from .parser import Parser
-from .constructor import Constructor, ConstructorError
-from .non_seq_constructor import NonSequentialConstructor
-from .iter_parser import IterParser
-from .dumper import Dumper
-from .convertor import Convertor
 from . import elements
+from .constructor import Constructor
+from .convertor import Convertor
+from .dumper import Dumper
+from .iter_parser import IterParser
+from .non_seq_constructor import NonSequentialConstructor
+from .parser import Parser
+
+__all__ = [
+    "parse",
+    "parse_string",
+    "construct",
+    "load",
+    "load_string",
+    "run",
+    "dump",
+    "dump_string",
+    "convert",
+]
 
 
-def parse(path: Union[str, Path], always_iter: bool = False,
-          implicit_fstrings: bool = True,
-          strict: bool = False) -> \
-        Union[elements.Element, Iterable[elements.Element]]:
+def parse(
+    path: Union[str, Path],
+    always_iter: bool = False,
+    implicit_fstrings: bool = True,
+    strict: bool = False,
+) -> Union[elements.Element, Iterable[elements.Element]]:
     """Parses config providing Element tree
 
     Parameters
@@ -39,10 +52,12 @@ def parse(path: Union[str, Path], always_iter: bool = False,
     return tree
 
 
-def parse_string(config_string: str, always_iter: bool = False,
-                 implicit_fstrings: bool = True,
-                 strict: bool = False) -> \
-        Union[elements.Element, Iterable[elements.Element]]:
+def parse_string(
+    config_string: str,
+    always_iter: bool = False,
+    implicit_fstrings: bool = True,
+    strict: bool = False,
+) -> Union[elements.Element, Iterable[elements.Element]]:
     """Parses config providing Element tree
 
     Parameters
@@ -67,10 +82,12 @@ def parse_string(config_string: str, always_iter: bool = False,
     return tree
 
 
-def construct(config: elements.Element,
-              base_config: elements.Element = None,
-              strict_typing: bool = False,
-              nonsequential: bool = False) -> Any:
+def construct(
+    config: elements.Element,
+    base_config: elements.Element = None,
+    strict_typing: bool = False,
+    nonsequential: bool = False,
+) -> Any:
     """Constructs python object based on config and known nip-objects
 
     Parameters
@@ -97,15 +114,21 @@ def construct(config: elements.Element,
     return constructor.construct(config)
 
 
-def _iter_load(configs, strict_typing, nonsequential):  # Otherwise load() will always be an iterator
+def _iter_load(
+    configs, strict_typing, nonsequential
+):  # Otherwise load() will always be an iterator
     for config in configs:
-        yield construct(config, strict_typing=strict_typing, nonsequential=nonsequential)
+        yield construct(
+            config, strict_typing=strict_typing, nonsequential=nonsequential
+        )
 
 
-def load(path: Union[str, Path],
-         always_iter: bool = False,
-         strict: bool = False,
-         nonsequential: bool = False) -> Union[Any, Iterable[Any]]:
+def load(
+    path: Union[str, Path],
+    always_iter: bool = False,
+    strict: bool = False,
+    nonsequential: bool = False,
+) -> Union[Any, Iterable[Any]]:
     """Parses config and constructs python object
     Parameters
     ----------
@@ -130,10 +153,12 @@ def load(path: Union[str, Path],
     return construct(config, strict_typing=strict, nonsequential=nonsequential)
 
 
-def load_string(config_string: str,
-                always_iter: bool = False,
-                strict: bool = False,
-                nonsequential: bool = False) -> Union[Any, Iterable[Any]]:
+def load_string(
+    config_string: str,
+    always_iter: bool = False,
+    strict: bool = False,
+    nonsequential: bool = False,
+) -> Union[Any, Iterable[Any]]:
     """Parses config and constructs python object
     Parameters
     ----------
@@ -231,8 +256,16 @@ def _run_return(value, config, return_values, return_configs):
     return tuple(return_tuple)
 
 
-def _single_run(config, func, verbose, return_values, return_configs, config_parameter,
-                strict, nonsequential):
+def _single_run(
+    config,
+    func,
+    verbose,
+    return_values,
+    return_configs,
+    config_parameter,
+    strict,
+    nonsequential,
+):
     if verbose:
         print("=" * 20)
         print("Running config:")
@@ -241,20 +274,27 @@ def _single_run(config, func, verbose, return_values, return_configs, config_par
 
     value = construct(config, strict, nonsequential)
     if func is not None:
-        if isinstance(value, tuple) and isinstance(value[0], list) and isinstance(value[1], dict):
+        if (
+            isinstance(value, tuple)
+            and isinstance(value[0], list)
+            and isinstance(value[1], dict)
+        ):
             args, kwargs = value
         elif isinstance(value, list):
             args, kwargs = value, {}
         elif isinstance(value, dict):
             args, kwargs = [], value
         else:
-            raise RuntimeError("Value constructed by the config cant be parsed as args and kwargs")
+            raise RuntimeError(
+                "Value constructed by the config cant be parsed as args and kwargs"
+            )
 
         if config_parameter:
             if config_parameter in kwargs:
                 raise RuntimeWarning(
                     f"nip.run() was asked to add config parameter '{config_parameter}', "
-                    f"but it is already specified by the config. It will be overwritten.")
+                    f"but it is already specified by the config. It will be overwritten."
+                )
             kwargs[config_parameter] = config
 
         value = func(*args, **kwargs)
@@ -267,24 +307,42 @@ def _single_run(config, func, verbose, return_values, return_configs, config_par
     return _run_return(value, config, return_values, return_configs)
 
 
-def _iter_run(configs, func, verbose, return_values, return_configs, config_parameter,
-              strict, nonsequential):
+def _iter_run(
+    configs,
+    func,
+    verbose,
+    return_values,
+    return_configs,
+    config_parameter,
+    strict,
+    nonsequential,
+):
     for config in configs:
-        run_return = _single_run(config, func, verbose, return_values, return_configs,
-                                 config_parameter, strict, nonsequential)
+        run_return = _single_run(
+            config,
+            func,
+            verbose,
+            return_values,
+            return_configs,
+            config_parameter,
+            strict,
+            nonsequential,
+        )
         if run_return:
             yield run_return
 
 
-def run(path: Union[str, Path],
-        func: Optional[Callable] = None,
-        verbose: bool = True,
-        strict: bool = False,
-        nonsequential: bool = False,
-        return_values: bool = True,
-        return_configs: bool = False,
-        always_iter: bool = False,
-        config_parameter: Optional[str] = None,):
+def run(
+    path: Union[str, Path],
+    func: Optional[Callable] = None,
+    verbose: bool = True,
+    strict: bool = False,
+    nonsequential: bool = False,
+    return_values: bool = True,
+    return_configs: bool = False,
+    always_iter: bool = False,
+    config_parameter: Optional[str] = None,
+):
     """Runs config. Config should be declared with function to run as a tag for the Document.
     In case of iterable configs we will iterate over and run each of them.
 
@@ -317,12 +375,31 @@ def run(path: Union[str, Path],
     value or config or (value, config): Any or str or (Any, str)
         returned values and configs of runs
     """
-    assert config_parameter is None or config_parameter is not None and func is not None, \
-        "`config_parameter` can be used only with specified `func`"
+    assert (
+        config_parameter is None or config_parameter is not None and func is not None
+    ), "`config_parameter` can be used only with specified `func`"
     config = parse(path, always_iter=always_iter, strict=strict)
     if isinstance(config, Iterable):
-        return list(_iter_run(config, func, verbose, return_values, return_configs,
-                              config_parameter, strict, nonsequential))  # mb iter?
+        return list(
+            _iter_run(
+                config,
+                func,
+                verbose,
+                return_values,
+                return_configs,
+                config_parameter,
+                strict,
+                nonsequential,
+            )
+        )  # mb iter?
 
-    return _single_run(config, func, verbose, return_values, return_configs, config_parameter,
-                       strict, nonsequential)
+    return _single_run(
+        config,
+        func,
+        verbose,
+        return_values,
+        return_configs,
+        config_parameter,
+        strict,
+        nonsequential,
+    )

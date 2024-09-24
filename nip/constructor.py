@@ -1,23 +1,17 @@
 # Constructor of tagged objects
 import importlib
 import importlib.util
-import inspect
-import typeguard
-
-from typing import Callable, Optional, Union, List, Tuple
 from types import FunctionType, ModuleType, BuiltinFunctionType
-from multipledispatch import dispatch
+from typing import Callable, Optional, Union
 
 from .utils import get_sub_dict
-
 
 global_builders = {}  # builders shared between Constructors
 global_calls = {}  # history of object creations
 
 
 class Constructor:
-    def __init__(self, ignore_rewriting=False, load_builders=True,
-                 strict_typing=False):
+    def __init__(self, ignore_rewriting=False, load_builders=True, strict_typing=False):
         self.builders = {}
         self.ignore_rewriting = ignore_rewriting
         if load_builders:
@@ -40,8 +34,9 @@ class Constructor:
         """
         if tag is None:
             tag = func.__name__
-        assert self.ignore_rewriting or tag not in self.builders, \
-            f"Builder for tag '{tag}' already registered"
+        assert (
+            self.ignore_rewriting or tag not in self.builders
+        ), f"Builder for tag '{tag}' already registered"
         self.builders[tag] = func
 
     def load_builders(self):
@@ -58,9 +53,11 @@ class ConstructorError(Exception):
         self.e = e
 
     def __str__(self):
-        return f"Unable to construct {self.cls} '{self.name}' with args:{self.args} and " \
-               f"kwargs:{self.kwargs}.\nFollowing exception occurred:\n" \
-               f"{self.e.__class__.__name__}: {self.e}"
+        return (
+            f"Unable to construct {self.cls} '{self.name}' with args:{self.args} and "
+            f"kwargs:{self.kwargs}.\nFollowing exception occurred:\n"
+            f"{self.e.__class__.__name__}: {self.e}"
+        )
 
 
 # mb: add meta for auto detecting this class as NIP-builder
@@ -87,40 +84,29 @@ def nip_decorator(name=None, wrap_call=False):
     return _
 
 
-@dispatch(str)
-def nip(name: str, wrap_call: bool = False):
-    """Wrapper to register function or class with specified name."""
-    return nip_decorator(name, wrap_call)
-
-
-@dispatch([(list, tuple)])
-def nip(names: Union[List[str], Tuple[str]], wrap_call: bool = False):
-    """Wrapper to register function or class with specified name."""
-    assert len(names) > 0, "Tag list should be nonempty"
-    for name in names:
-        assert isinstance(name, str), "Every specified Tag should be string."
-    return nip_decorator(names, wrap_call)
-
-
-@dispatch()
-def nip(wrap_call=False):
+# instead of multipledispatch
+def nip(item=None, *, wrap_builtins=False, wrap_call=False):
+    if isinstance(item, str):  # single name is passed
+        return nip_decorator(item, wrap_call)
+    if isinstance(item, (list, tuple)):
+        for name in item:
+            if not isinstance(name, str):
+                raise ValueError("Every specified Tag should be a string.")
+        return nip_decorator(item, wrap_call)
+    if isinstance(item, (type, FunctionType, BuiltinFunctionType)):
+        return nip_decorator()(item)
+    if isinstance(item, ModuleType):
+        return wrap_module(item, wrap_builtins)
+    if item is not None:
+        raise ValueError("Unexpected type passed to @nip decorator.")
     return nip_decorator(wrap_call=wrap_call)
 
 
-@dispatch([(type, FunctionType, BuiltinFunctionType)])
-def nip(item: Union[type, FunctionType]):
-    """Wrapper to register function or class with default name."""
-    return nip_decorator()(item)
-
-
-@dispatch(ModuleType)
-def nip(module, wrap_builtins=False):
-    """Wraps everything specified under module."""
-    wrap_module(module, wrap_builtins)
-
-
-def call_wrapper(item: Union[type, FunctionType]):  # wraps call for convenient object dump
+def call_wrapper(
+    item: Union[type, FunctionType]
+):  # wraps call for convenient object dump
     print("wrapping")
+
     # ToDo: only for classes !!
 
     def call_dumper(*args, **kwargs):
@@ -150,34 +136,11 @@ def wrap_module(module: Union[str, ModuleType], wrap_builtins=False):
         module = importlib.import_module(module)
 
     for value in module.__dict__.values():
-        if isinstance(value, (type, FunctionType)) or \
-                wrap_builtins and isinstance(value, BuiltinFunctionType):
+        if (
+            isinstance(value, (type, FunctionType))
+            or wrap_builtins
+            and isinstance(value, BuiltinFunctionType)
+        ):
             nip(value)
 
-
-def check_typing(func, args, kwargs) -> List[str]:
-    try:
-        signature = inspect.signature(func)
-    except ValueError:  # unable to load function signature (common case for builtin functions)
-        return []
-    messages = []
-    for arg, param in zip(args, signature.parameters.values()):
-        if param.annotation is inspect.Parameter.empty:
-            continue
-        try:
-            typeguard.check_type(arg, param.annotation)
-        except typeguard.TypeCheckError as e:
-            messages.append(f"{param.name}: {e}")
-
-    for name, value in kwargs.items():
-        if name not in signature.parameters:
-            continue  # handled by python
-        annotation = signature.parameters[name].annotation
-        if annotation is inspect.Parameter.empty:
-            continue
-        try:
-            typeguard.check_type(value, annotation)
-        except typeguard.TypeCheckError as e:
-            messages.append(f"{name}: {e}")
-
-    return messages
+    return module

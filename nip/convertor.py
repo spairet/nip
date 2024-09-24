@@ -1,7 +1,7 @@
-from typing import Dict, Optional, Callable, Union
+from typing import Optional, Callable, Union
 
-from nip.elements import Element, Args, Tag, Value
 from nip.constructor import global_builders
+from nip.elements import Element, Args, Tag, Value
 
 global_convertors = {}
 
@@ -25,17 +25,19 @@ class Convertor:
             kwargs = {}
             for key, value in obj.items():
                 kwargs[key] = self.convert(value)
-            return Args('args', ([], kwargs))
+            return Args("args", ([], kwargs))
 
         if isinstance(obj, (list, tuple)):
-            return Args('args', ([self.convert(value) for value in obj], {}))
+            return Args("args", ([self.convert(value) for value in obj], {}))
 
         if isinstance(obj, (int, float, str, bool)):
-            return Value('value', obj)
+            return Value("value", obj)
 
         raise ConvertorError(obj, "No convertor specified for this class")
 
-    def register(self, class_: Union[type, str], func: Callable, tag: Optional[str] = None):
+    def register(
+        self, class_: Union[type, str], func: Callable, tag: Optional[str] = None
+    ):
         if isinstance(class_, type):
             class_name = class_.__name__
         elif isinstance(class_, str):
@@ -44,7 +46,10 @@ class Convertor:
             raise TypeError("Expected type or str as class_ argument")
         if tag is None:
             for builder_tag, builder in global_builders.items():
-                if isinstance(builder, type) and builder.__class__.__name__ == class_name:
+                if (
+                    isinstance(builder, type)
+                    and builder.__class__.__name__ == class_name
+                ):
                     tag = builder_tag
             tag = tag or class_name
         self.convertors[class_name] = (tag, func)
@@ -52,7 +57,7 @@ class Convertor:
     def _load_globals(self):
         self.convertors.update(global_convertors)
         for builder_tag, builder in global_builders.items():
-            if isinstance(builder, type) and hasattr(builder, '__nip__'):
+            if isinstance(builder, type) and hasattr(builder, "__nip__"):
                 self.convertors[builder.__name__] = (builder_tag, builder.__nip__)
 
 
@@ -63,8 +68,10 @@ class ConvertorError(Exception):
         self.message = message
 
     def __str__(self):
-        return f"Unable to convert object {self.obj} of class {self.class_name} to nip: " \
-               f"{self.message}"
+        return (
+            f"Unable to convert object {self.obj} of class {self.class_name} to nip: "
+            f"{self.message}"
+        )
 
 
 def pin(class_name: str, tag: str):
