@@ -5,9 +5,7 @@ import typeguard
 
 
 def get_subclasses(cls):
-    return set(cls.__subclasses__()).union(
-        [s for c in cls.__subclasses__() for s in get_subclasses(c)]
-    )
+    return set(cls.__subclasses__()).union([s for c in cls.__subclasses__() for s in get_subclasses(c)])
 
 
 def get_sub_dict(base_cls):
@@ -56,9 +54,7 @@ def flatten(obj, delimiter=".", keys=()):
 def check_typing(func, args, kwargs) -> List[str]:
     try:
         signature = inspect.signature(func)
-    except (
-        ValueError
-    ):  # unable to load function signature (common case for builtin functions)
+    except ValueError:  # unable to load function signature (common case for builtin functions)
         return []
     messages = []
     typeguard.typechecked()

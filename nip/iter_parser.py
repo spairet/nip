@@ -20,9 +20,7 @@ class IterParser:  # mb: insert this functionality into Parser (save parsed tree
             iter_len = len(group[0].value)
             for iterator in group:
                 if len(iterator.value) != iter_len:
-                    raise IterParserError(
-                        f"Iterators of group '{group_name}' have different lengths"
-                    )
+                    raise IterParserError(f"Iterators of group '{group_name}' have different lengths")
 
         group_names = sorted(iter_groups.keys())
         group_lengths = [len(iter_groups[name][0].value) for name in group_names]
@@ -36,9 +34,7 @@ class IterParser:  # mb: insert this functionality into Parser (save parsed tree
 
     def __iter__(self):
         if self.element is None:
-            raise IterParserError(
-                "config element to iterate through was not defined in __init__"
-            )
+            raise IterParserError("config element to iterate through was not defined in __init__")
         return self.iter_configs(self.element)
 
 

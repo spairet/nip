@@ -16,9 +16,7 @@ def insert_directive(right_value, stream: Stream):
         return config.value
 
     elif isinstance(right_value, nip.elements.Args):
-        assert (
-            len(right_value.value[0]) == 1
-        ), "only single positional argument will be treated as config path."
+        assert len(right_value.value[0]) == 1, "only single positional argument will be treated as config path."
         constructor = Constructor()
         path = constructor.construct(right_value.value[0][0])
         assert isinstance(path, str), "Load directive expects path as first argument."

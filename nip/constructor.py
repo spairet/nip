@@ -34,9 +34,7 @@ class Constructor:
         """
         if tag is None:
             tag = func.__name__
-        assert (
-            self.ignore_rewriting or tag not in self.builders
-        ), f"Builder for tag '{tag}' already registered"
+        assert self.ignore_rewriting or tag not in self.builders, f"Builder for tag '{tag}' already registered"
         self.builders[tag] = func
 
     def load_builders(self):
@@ -102,9 +100,7 @@ def nip(item=None, *, wrap_builtins=False, wrap_call=False):
     return nip_decorator(wrap_call=wrap_call)
 
 
-def call_wrapper(
-    item: Union[type, FunctionType]
-):  # wraps call for convenient object dump
+def call_wrapper(item: Union[type, FunctionType]):  # wraps call for convenient object dump
     print("wrapping")
 
     # ToDo: only for classes !!
@@ -136,11 +132,7 @@ def wrap_module(module: Union[str, ModuleType], wrap_builtins=False):
         module = importlib.import_module(module)
 
     for value in module.__dict__.values():
-        if (
-            isinstance(value, (type, FunctionType))
-            or wrap_builtins
-            and isinstance(value, BuiltinFunctionType)
-        ):
+        if isinstance(value, (type, FunctionType)) or wrap_builtins and isinstance(value, BuiltinFunctionType):
             nip(value)
 
     return module

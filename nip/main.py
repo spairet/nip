@@ -114,13 +114,9 @@ def construct(
     return constructor.construct(config)
 
 
-def _iter_load(
-    configs, strict_typing, nonsequential
-):  # Otherwise load() will always be an iterator
+def _iter_load(configs, strict_typing, nonsequential):  # Otherwise load() will always be an iterator
     for config in configs:
-        yield construct(
-            config, strict_typing=strict_typing, nonsequential=nonsequential
-        )
+        yield construct(config, strict_typing=strict_typing, nonsequential=nonsequential)
 
 
 def load(
@@ -274,20 +270,14 @@ def _single_run(
 
     value = construct(config, strict, nonsequential)
     if func is not None:
-        if (
-            isinstance(value, tuple)
-            and isinstance(value[0], list)
-            and isinstance(value[1], dict)
-        ):
+        if isinstance(value, tuple) and isinstance(value[0], list) and isinstance(value[1], dict):
             args, kwargs = value
         elif isinstance(value, list):
             args, kwargs = value, {}
         elif isinstance(value, dict):
             args, kwargs = [], value
         else:
-            raise RuntimeError(
-                "Value constructed by the config cant be parsed as args and kwargs"
-            )
+            raise RuntimeError("Value constructed by the config cant be parsed as args and kwargs")
 
         if config_parameter:
             if config_parameter in kwargs:

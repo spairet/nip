@@ -31,9 +31,7 @@ class Parser:  # mb: we don't need Parser itself. its just storage for links and
         return self.parse(path)
 
     def parse_string(self, string):
-        stream = Stream(
-            string
-        )  # mb: add stream to parser and log errors more convenient
+        stream = Stream(string)  # mb: add stream to parser and log errors more convenient
         tree = elements.Document.read(stream, self)
         if stream:
             raise ParserError(stream, "Wrong statement.")
@@ -43,9 +41,7 @@ class Parser:  # mb: we don't need Parser itself. its just storage for links and
         return len(self.iterators) > 0
 
 
-class ParserError(
-    Exception
-):  # ToDo: currently blank lines skipped thus printed line mb wrong
+class ParserError(Exception):
     def __init__(self, stream: Stream, msg: str):
         self.line = stream.n
         self.pos = stream.pos

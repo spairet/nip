@@ -4,9 +4,7 @@ from typing import Union
 
 
 class Dumper:
-    def __init__(
-        self, indent: int = 0, default_shift: int = 2, create_dirs: bool = True
-    ):
+    def __init__(self, indent: int = 0, default_shift: int = 2, create_dirs: bool = True):
         self.indent = indent
         self.default_shift = default_shift
         self.create_dirs = create_dirs

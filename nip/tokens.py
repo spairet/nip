@@ -103,9 +103,7 @@ class String(Token):
             return pos, String(stream[1 : pos - 1])
 
         pos = len(stream)
-        for op in [
-            "#"
-        ]:  # mb: other operators stops string. (hard to raise good exception)
+        for op in ["#"]:  # mb: other operators stops string. (hard to raise good exception)
             found_pos = stream.find(op)
             if found_pos >= 0:
                 pos = min(pos, found_pos)
@@ -122,9 +120,7 @@ class Name(String):
         if not stream[pos].isalpha():
             return 0, None
 
-        while pos < len(stream) and (
-            stream[pos].isalnum() or stream[pos] == "_" or stream[pos] == "."
-        ):
+        while pos < len(stream) and (stream[pos].isalnum() or stream[pos] == "_" or stream[pos] == "."):
             pos += 1
 
         return pos, Name(stream[:pos])
@@ -237,9 +233,7 @@ class InlinePython(Token):
 
 class PythonString(Token):
     @classmethod
-    def read(
-        cls, stream: str, implicit_fstrings: bool = False
-    ) -> Tuple[int, Union[None, PythonString]]:
+    def read(cls, stream: str, implicit_fstrings: bool = False) -> Tuple[int, Union[None, PythonString]]:
         string = stream[:].strip()
         if implicit_fstrings and string[0] in "\"'":
             if string[-1] != string[0]:
