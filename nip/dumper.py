@@ -1,6 +1,6 @@
 # Dumper for Element tree objects
-from typing import Union
 from pathlib import Path
+from typing import Union
 
 
 class Dumper:

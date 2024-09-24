@@ -2,8 +2,8 @@ from collections import defaultdict
 from itertools import product
 from typing import Iterable
 
-from .parser import Parser
 from .elements import Element
+from .parser import Parser
 
 
 class IterParser:  # mb: insert this functionality into Parser (save parsed tree in Parser)
@@ -14,7 +14,7 @@ class IterParser:  # mb: insert this functionality into Parser (save parsed tree
     def iter_configs(self, element: Element) -> Iterable[Element]:
         iter_groups = defaultdict(list)
         for i, iterator in enumerate(self.iterators):
-            name = iterator.name if iterator.name else f'_{i}'
+            name = iterator.name if iterator.name else f"_{i}"
             iter_groups[name].append(iterator)
         for group_name, group in iter_groups.items():
             iter_len = len(group[0].value)

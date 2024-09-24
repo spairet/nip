@@ -1,12 +1,12 @@
-import nip.tokens as tokens
+from typing import Union, Type
 
-from typing import Union, List, Type
+import nip.tokens as tokens
 
 
 class Stream:
     def __init__(self, sstream: str):
         self.lines = sstream.split("\n")
-        self.lines = [line + ' ' for line in self.lines]
+        self.lines = [line + " " for line in self.lines]
         self.n = 0
         self.pos = 0
         self.last_peak_pos = -1
@@ -57,10 +57,10 @@ class Stream:
 
     def _pass_forward(self):
         while self and (
-                self.pos >= len(self.lines[self.n]) or
-                self.lines[self.n][self.pos:].isspace() or
-                self.lines[self.n][self.pos:].strip()[0] == '#'
-                ):
+            self.pos >= len(self.lines[self.n])
+            or self.lines[self.n][self.pos :].isspace()
+            or self.lines[self.n][self.pos :].strip()[0] == "#"
+        ):
             self.n += 1
             self.pos = 0
 

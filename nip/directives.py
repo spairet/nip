@@ -1,9 +1,8 @@
 """Contains nip directives."""
 
 import nip.elements
-
-from .parser import Parser, ParserError
 from .constructor import Constructor
+from .parser import Parser, ParserError
 from .stream import Stream
 
 
@@ -28,12 +27,12 @@ def insert_directive(right_value, stream: Stream):
 
     else:
         raise ParserError(
-            stream, "string or combination of arg and **kwargs are expected as value of !!insert directive")
+            stream,
+            "string or combination of arg and **kwargs are expected as value of !!insert directive",
+        )
 
 
-_directives = {
-    'insert': insert_directive
-}
+_directives = {"insert": insert_directive}
 
 
 def call_directive(name, right_value, stream: Stream):
