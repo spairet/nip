@@ -1,6 +1,6 @@
 from typing import Optional, Callable, Union
 
-from nip.constructor import global_builders
+from nip.constructor import global_builders, ArgsKwargs
 from nip.elements import Node, Args, Tag, Value
 
 global_convertors = {}
@@ -20,6 +20,11 @@ class Convertor:
 
         if hasattr(obj, "__nip__"):
             return Tag(class_name, self.convert(obj.__nip__()))
+
+        if isinstance(obj, ArgsKwargs):
+            args = [self.convert(value) for value in obj.args]
+            kwargs = {key: self.convert(value) for key, value in obj.kwargs.items()}
+            return Args("args", (args, kwargs))
 
         if isinstance(obj, dict):
             kwargs = {}

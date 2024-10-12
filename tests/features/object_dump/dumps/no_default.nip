@@ -1,0 +1,8 @@
+!NoDefaultDumper 
+- "just_a_name"
+value: !BigComplexClass 
+  - "data_value"
+  - 
+    - 1
+    - 2
+    - 3

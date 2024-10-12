@@ -42,7 +42,7 @@ class Node(ABC, object):
             return self
         return self._value[item]
 
-    def __getattr__(self, item):
+    def __getattr__(self, item):  # unable to access names like `construct` and 'dump` via this method
         return self.__getitem__(item)
 
     def __setitem__(self, key, value):
@@ -63,10 +63,6 @@ class Node(ABC, object):
 
     def construct(self, base_config: Node = None, strict_typing: bool = False, nonsequential: bool = True):
         return nip.construct(self, base_config=base_config, strict_typing=strict_typing, nonsequential=nonsequential)
-
-    @property
-    def value(self):
-        return self.construct()
 
     def _dump(self, dumper: nip.dumper.Dumper):
         return self._value._dump(dumper)

@@ -191,6 +191,7 @@ def dump(path: Union[str, Path], obj: Union[elements.Node, object]):
     """
     if not isinstance(obj, elements.Node):
         obj = convert(obj)
+        # mb: wrap with Document to ensure getting `---` at the beginning of the file.
     dumper = Dumper()
     dumper.dump(path, obj)
 
