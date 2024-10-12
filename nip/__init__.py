@@ -1,7 +1,6 @@
 from .constructor import Constructor
 from .constructor import nip, wrap_module
 from .convertor import pin
-from .elements import Element
 from .main import (
     parse,
     parse_string,
@@ -13,5 +12,6 @@ from .main import (
     convert,
     run,
 )
+from .elements import Node
 from .non_seq_constructor import NonSequentialConstructor
 from .parser import Parser

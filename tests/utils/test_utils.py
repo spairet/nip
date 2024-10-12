@@ -21,9 +21,12 @@ def deep_conditioned_compare(first: object, second: object, conditions: List[Cal
     if isinstance(first, (list, tuple)) and isinstance(second, (list, tuple)):
         if len(first) != len(second):
             return False
-        return all([deep_conditioned_compare(first_item, second_item, conditions)
-                    for first_item, second_item
-                    in zip(first, second)])
+        return all(
+            [
+                deep_conditioned_compare(first_item, second_item, conditions)
+                for first_item, second_item in zip(first, second)
+            ]
+        )
     if isinstance(first, dict) and isinstance(second, dict):
         if len(first) != len(second):
             return False

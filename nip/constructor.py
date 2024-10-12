@@ -20,7 +20,7 @@ class Constructor:
         self.strict_typing = strict_typing
 
     def construct(self, element):
-        return element.construct(self)
+        return element._construct(self)
 
     def register(self, func: Callable, tag: Optional[str] = None):
         """Registers builder function for tag
@@ -45,7 +45,7 @@ class Constructor:
 class ConstructorError(Exception):
     def __init__(self, element, args, kwargs, e):
         self.cls = type(element).__name__
-        self.name = element.name
+        self.name = element._name
         self.args = args
         self.kwargs = kwargs
         self.e = e

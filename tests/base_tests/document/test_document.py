@@ -5,7 +5,7 @@ def test_document():
 
     parsed = parse("base_tests/document/configs/document.nip")
     assert isinstance(parsed, Document)
-    assert parsed.name == "Strange_and_2_long_DocumentName"
+    assert parsed._name == "Strange_and_2_long_DocumentName"
 
     result = load("base_tests/document/configs/document.nip")
     assert isinstance(result, builders.MyClass)

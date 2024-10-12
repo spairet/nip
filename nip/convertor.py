@@ -1,7 +1,7 @@
 from typing import Optional, Callable, Union
 
 from nip.constructor import global_builders
-from nip.elements import Element, Args, Tag, Value
+from nip.elements import Node, Args, Tag, Value
 
 global_convertors = {}
 
@@ -12,7 +12,7 @@ class Convertor:
         if load_globals:
             self._load_globals()
 
-    def convert(self, obj: object) -> Element:
+    def convert(self, obj: object) -> Node:
         class_name = type(obj).__name__
         if class_name in self.convertors:
             tag, convertor = self.convertors[class_name]

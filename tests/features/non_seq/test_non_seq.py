@@ -31,7 +31,7 @@ def test_harder_non_seq():
             }
         ],
         'other_main': {
-            'iteresting': [4, 5, 6, 7],
+            'interesting': [4, 5, 6, 7],
             'here_is_the_ll': 6
         }
     }
@@ -42,13 +42,16 @@ def test_part_harder_non_seq():
     config = nip.parse("features/non_seq/configs/harder_non_seq.nip")
     constructor = nip.non_seq_constructor.NonSequentialConstructor(config)
     expected = {
-        'iteresting': [4, 5, 6, 7],
+        'interesting': [4, 5, 6, 7],
         'here_is_the_ll': 6
     }
     output = constructor.construct(config['other_main'])
     assert output == expected
 
-    output = config['other_main'].construct(constructor)
+    output = config['other_main']._construct(constructor)
+    assert output == expected
+
+    output = nip.construct(config['other_main'])
     assert output == expected
 
 
