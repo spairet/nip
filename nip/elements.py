@@ -393,6 +393,13 @@ class Args(Node):
     def __setitem__(self, key, value):
         value = nip.convert(value)
         if isinstance(key, int):
+            if not -1 <= key < len(self._value[0]):
+                raise KeyError(
+                    f"You can only access existing positional arguments or add new one using -1 key. "
+                    f"Index {key} is out of range [-1, {len(self._value[0]) - 1}]."
+                )
+            if key == -1:
+                self._value[0].append(value)
             self._value[0][key] = value
         else:
             self._value[1][key] = value
