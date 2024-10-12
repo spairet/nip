@@ -10,10 +10,10 @@ class Dumper:
         self.create_dirs = create_dirs
 
     def dumps(self, element):
-        return element.dump(self).strip()
+        return element._dump(self).strip()
 
     def dump(self, filepath: Union[str, Path], element):
-        string = element.dump(self).strip()
+        string = element._dump(self).strip()
         filepath = Path(filepath)
         if self.create_dirs:
             filepath.parent.mkdir(parents=True, exist_ok=True)

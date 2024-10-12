@@ -5,7 +5,7 @@ import nip.elements as elements
 from .stream import Stream
 
 
-class Parser:  # mb: we don't need Parser itself. its just storage for links and tags. Hm...
+class Parser:
     def __init__(
         self,
         implicit_fstrings: bool = True,
@@ -19,13 +19,16 @@ class Parser:  # mb: we don't need Parser itself. its just storage for links and
         self.strict = strict
         self.sequential_links = sequential_links
         self.last_indent = -1
+        self.stack = []
 
     def parse(self, path: Union[str, Path]):
         path = Path(path)
         with path.open() as f_stream:
             string_representation = f_stream.read()
 
-        return self.parse_string(string_representation)
+        tree = self.parse_string(string_representation)
+        tree._path = path
+        return tree
 
     def __call__(self, path: Union[str, Path]):
         return self.parse(path)
@@ -35,6 +38,7 @@ class Parser:  # mb: we don't need Parser itself. its just storage for links and
         tree = elements.Document.read(stream, self)
         if stream:
             raise ParserError(stream, "Wrong statement.")
+        tree._update_parents()
         return tree
 
     def has_iterators(self) -> bool:

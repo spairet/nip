@@ -20,7 +20,7 @@ class Constructor:
         self.strict_typing = strict_typing
 
     def construct(self, element):
-        return element.construct(self)
+        return element._construct(self)
 
     def register(self, func: Callable, tag: Optional[str] = None):
         """Registers builder function for tag
@@ -45,7 +45,7 @@ class Constructor:
 class ConstructorError(Exception):
     def __init__(self, element, args, kwargs, e):
         self.cls = type(element).__name__
-        self.name = element.name
+        self.name = element._name
         self.args = args
         self.kwargs = kwargs
         self.e = e
@@ -64,13 +64,13 @@ class NIPBuilder:
     pass
 
 
-def nip_decorator(name=None, wrap_call=False):
+def nip_decorator(name=None, convertable=False):
     assert name is None or len(name) > 0, "name should be nonempty"
 
     def _(item):
-        if wrap_call:
+        if convertable:
             assert isinstance(item, type), "Call wrapping supported only for class type"
-            item = call_wrapper(item)
+            make_convertable(item)
         local_name = name or item.__name__
         if isinstance(local_name, (list, tuple)):
             for n in local_name:
@@ -83,41 +83,24 @@ def nip_decorator(name=None, wrap_call=False):
 
 
 # instead of multipledispatch
-def nip(item=None, *, wrap_builtins=False, wrap_call=False):
+def nip(item=None, *, wrap_builtins=False, convertable=False):
     if isinstance(item, str):  # single name is passed
-        return nip_decorator(item, wrap_call)
+        return nip_decorator(item, convertable)
     if isinstance(item, (list, tuple)):
         for name in item:
             if not isinstance(name, str):
                 raise ValueError("Every specified Tag should be a string.")
-        return nip_decorator(item, wrap_call)
+        return nip_decorator(item, convertable)
     if isinstance(item, (type, FunctionType, BuiltinFunctionType)):
-        return nip_decorator()(item)
+        return nip_decorator(convertable=convertable)(item)
     if isinstance(item, ModuleType):
-        return wrap_module(item, wrap_builtins)
+        return wrap_module(item, wrap_builtins=wrap_builtins, convertable=convertable)
     if item is not None:
         raise ValueError("Unexpected type passed to @nip decorator.")
-    return nip_decorator(wrap_call=wrap_call)
+    return nip_decorator(convertable=convertable)
 
 
-def call_wrapper(item: Union[type, FunctionType]):  # wraps call for convenient object dump
-    print("wrapping")
-
-    # ToDo: only for classes !!
-
-    def call_dumper(*args, **kwargs):
-        print(args, kwargs)
-        value = item(*args, **kwargs)
-        global_calls[value] = (args, kwargs)  # Todo: how to do this correctly?
-        return value
-
-    call_dumper.__doc__ = item.__doc__  # mimic to original function
-    call_dumper.__name__ = item.__name__
-
-    return call_dumper
-
-
-def wrap_module(module: Union[str, ModuleType], wrap_builtins=False):
+def wrap_module(module: Union[str, ModuleType], wrap_builtins=False, convertable=False):
     """Wraps everything declared in module with @nip
 
     Parameters
@@ -133,6 +116,29 @@ def wrap_module(module: Union[str, ModuleType], wrap_builtins=False):
 
     for value in module.__dict__.values():
         if isinstance(value, (type, FunctionType)) or wrap_builtins and isinstance(value, BuiltinFunctionType):
-            nip(value)
+            nip(value, convertable=convertable and isinstance(value, type))
 
     return module
+
+
+class ArgsKwargs:
+    def __init__(self, args, kwargs):
+        self.args = args
+        self.kwargs = kwargs
+
+
+def _wrap_init_call(self, *args, **kwargs):
+    self.__init_args = ArgsKwargs(args, kwargs)
+    self.__origin_init__(*args, **kwargs)
+
+
+def _converter(self):
+    return self.__init_args
+
+
+def make_convertable(cls):
+    if hasattr(cls, "__nip__"):
+        return
+    cls.__origin_init__ = cls.__init__
+    cls.__init__ = _wrap_init_call
+    cls.__nip__ = _converter

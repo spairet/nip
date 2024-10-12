@@ -29,3 +29,9 @@ class SmallButValuableClass:
 
     def __nip__(self):
         return self.just_name
+
+
+class NoDefaultDumper:
+    def __init__(self, name, value):
+        self.name = name
+        self.value = value

@@ -19,7 +19,7 @@ class VarsDict:
         if item in self.in_progress:
             raise NonSequentialConstructorError(f"Recursive construction of '{item}'.")
         self.in_progress.add(item)
-        self.constructor.links[item].construct(self.constructor)
+        self.constructor.links[item]._construct(self.constructor)
         self.in_progress.remove(item)
         return self.vars[item]
 
@@ -40,7 +40,7 @@ class VarsDict:
 class NonSequentialConstructor(Constructor):
     def __init__(
         self,
-        base_config: "nip.elements.Element",
+        base_config: "nip.elements.Node",
         ignore_rewriting=False,
         load_builders=True,
         strict_typing=False,
@@ -50,15 +50,15 @@ class NonSequentialConstructor(Constructor):
         self.links = {}
         self._find_links(base_config)
 
-    def _find_links(self, node: "nip.elements.Element"):
+    def _find_links(self, node: "nip.elements.Node"):
         if isinstance(node, nip.elements.LinkCreation):
-            assert node.name not in self.links, "Redefined link."
-            self.links[node.name] = node
+            assert node._name not in self.links, "Redefined link."
+            self.links[node._name] = node
         if isinstance(node, nip.elements.Args):
             for sub_node in node:
                 self._find_links(sub_node)
-        if isinstance(node.value, nip.elements.Element):
-            self._find_links(node.value)
+        if isinstance(node._value, nip.elements.Node):
+            self._find_links(node._value)
 
 
 class NonSequentialConstructorError(Exception):

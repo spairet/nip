@@ -8,7 +8,7 @@ class Token(ABC):
     """Abstract of token reader"""
 
     def __init__(self, value: Any = None):
-        self.value = value
+        self._value = value
 
     @staticmethod
     @abstractmethod
@@ -20,10 +20,10 @@ class Token(ABC):
         self.pos = pos
 
     def __eq__(self, other: Token):
-        return self.__class__ == other.__class__ and self.value == other.value
+        return self.__class__ == other.__class__ and self._value == other._value
 
     @property
-    def name(self):
+    def _name(self):
         return self.__class__.__name__
 
 
@@ -127,24 +127,7 @@ class Name(String):
 
 
 class Operator(Token):
-    operators = [
-        "---",
-        "@",
-        "#",
-        "&",
-        "!&",
-        "!!",
-        "!",
-        "- ",
-        ": ",
-        "*",
-        "{",
-        "}",
-        "[",
-        "]",
-        "(",
-        ")",
-    ]
+    operators = ["---", "@", "#", "&", "!&", "!!", "!", "- ", ": ", "*", "{", "}", "[", "]", "(", ")"]
 
     @staticmethod
     def read(stream: str) -> Tuple[int, Union[None, Operator]]:

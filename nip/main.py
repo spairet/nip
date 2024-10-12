@@ -27,7 +27,7 @@ def parse(
     always_iter: bool = False,
     implicit_fstrings: bool = True,
     strict: bool = False,
-) -> Union[elements.Element, Iterable[elements.Element]]:
+) -> Union[elements.Node, Iterable[elements.Node]]:
     """Parses config providing Element tree
 
     Parameters
@@ -57,7 +57,7 @@ def parse_string(
     always_iter: bool = False,
     implicit_fstrings: bool = True,
     strict: bool = False,
-) -> Union[elements.Element, Iterable[elements.Element]]:
+) -> Union[elements.Node, Iterable[elements.Node]]:
     """Parses config providing Element tree
 
     Parameters
@@ -83,10 +83,10 @@ def parse_string(
 
 
 def construct(
-    config: elements.Element,
-    base_config: elements.Element = None,
+    config: elements.Node,
+    base_config: elements.Node = None,
     strict_typing: bool = False,
-    nonsequential: bool = False,
+    nonsequential: bool = True,
 ) -> Any:
     """Constructs python object based on config and known nip-objects
 
@@ -107,7 +107,7 @@ def construct(
     obj: Any
     """
     if nonsequential or base_config is not None:
-        base_config = base_config or config
+        base_config = base_config or config._get_root()
         constructor = NonSequentialConstructor(base_config, strict_typing=strict_typing)
     else:
         constructor = Constructor(strict_typing=strict_typing)
@@ -179,7 +179,7 @@ def load_string(
     return construct(config, strict_typing=strict, nonsequential=nonsequential)
 
 
-def dump(path: Union[str, Path], obj: Union[elements.Element, object]):
+def dump(path: Union[str, Path], obj: Union[elements.Node, object]):
     """Dumps config tree to file.
 
     Parameters
@@ -189,13 +189,14 @@ def dump(path: Union[str, Path], obj: Union[elements.Element, object]):
     obj: Element or object
         Read or generated config if Element. In case of any other object `convert` will be called.
     """
-    if not isinstance(obj, elements.Element):
+    if not isinstance(obj, elements.Node):
         obj = convert(obj)
+        # mb: wrap with Document to ensure getting `---` at the beginning of the file.
     dumper = Dumper()
     dumper.dump(path, obj)
 
 
-def dump_string(obj: Union[elements.Element, object]) -> str:
+def dump_string(obj: Union[elements.Node, object]) -> str:
     """Dumps config tree to string.
 
     Parameters
@@ -208,7 +209,7 @@ def dump_string(obj: Union[elements.Element, object]) -> str:
     string: str
         Dumped element as a string.
     """
-    if not isinstance(obj, elements.Element):
+    if not isinstance(obj, elements.Node):
         obj = convert(obj)
     dumper = Dumper()
     return dumper.dumps(obj)

@@ -37,8 +37,8 @@ def NoNipFunc(name):
 
 
 def show(*args, **kwargs):
-    print('args:', args)
-    print('kwargs:', kwargs)
+    print("args:", args)
+    print("kwargs:", kwargs)
 
 
 def main(param, config):
@@ -64,7 +64,7 @@ class Note:
         return self.name == other.name and self.comment == other.comment
 
 
-@nip(['first_tag', 'second_tag'])
+@nip(["first_tag", "second_tag"])
 class MultiTagClass:
-    def __init__(self, name: str = ''):
+    def __init__(self, name: str = ""):
         self.name = name
