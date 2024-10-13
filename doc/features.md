@@ -111,7 +111,6 @@ class MyCoolClass:
 ```
 </td></tr></table>
 
-> main.py
 >```python
 >import builders
 >import nip
@@ -124,3 +123,100 @@ class MyCoolClass:
 > 
 > {'class': <builders.MyCoolClass object at 0x0000014CB1CED160>, 'simple_construction': (['simple_name'], {'value': 321})}
 
+
+
+### F-strings
+Just like python f-strings. You can use variables of the config in the f-strings.
+
+<table>
+<tr><th>config.nip</th></tr>
+<tr><td>
+
+```yaml
+path: f"/home/{name}/project"
+name: &name user
+``` 
+</td></table>
+
+>```python
+>import nip
+>
+>print(nip.load("config.nip"))
+>```
+> {'path': '/home/user/project', 'name': 'user'}
+
+
+### Flatten
+This may be usefull when dumping config parameters to some experiment tracking system like [WandB](https://wandb.ai) or [ClearML](https://clear.ml).
+Note that in the example we do not import `builders`: `flatten()` converts Node to dict without construction.
+
+<table>
+<tr><th>config.nip</th><th>builder.nip</th></tr>
+<tr><td>
+
+```yaml
+class: !MyCoolClass
+  - 'class_name'
+  value: 123
+
+some.parameter:
+  with:
+    nested:
+      dict: 321
+``` 
+</td><td>
+
+```python
+from nip import nip
+
+@nip
+class MyCoolClass:
+    def __init__(self, name, value):
+        self.name = name
+        self.value = value
+
+    def __str__(self):
+        return f"{self.name}: {self.value}"
+```
+</td></tr></table>
+
+>```python
+>import nip
+>
+>config = nip.parse("config.nip")
+>print(config.flatten())
+>```
+> {'class.0': 'class_name', 'class.value': 123, 'some.parameter.with.nested.dict': 321}
+
+### Class construction
+You can construct class itself instead of instance of the class with `!&` operator.
+
+<table>
+<tr><th>config.nip</th><th>builder.nip</th></tr>
+<tr><td>
+
+```yaml
+simple_class: !&SimpleClass
+``` 
+</td><td>
+
+```python
+from nip import nip
+
+
+@nip
+class SimpleClass:
+    def __init__(self, name: str):
+        self.name = name
+```
+</td></tr></table>
+
+>```python
+>import nip
+>import builders
+>
+>result = nip.load("config.nip")
+>assert result["simple_class"] is builders.SimpleClass
+>print(result)
+>```
+> {'simple_class': <class 'builders.SimpleClass'>}
