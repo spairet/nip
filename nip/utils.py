@@ -61,7 +61,6 @@ def check_typing(func, args, kwargs) -> List[str]:
     if len(args) > len(signature.parameters.values()):
         messages.append("Too many arguments")
     for arg, param in zip(args, signature.parameters.values()):
-        print(arg, param)
         if param.annotation is inspect.Parameter.empty:
             continue
         try:
@@ -73,7 +72,6 @@ def check_typing(func, args, kwargs) -> List[str]:
         if name not in signature.parameters:
             continue  # handled by python
         annotation = signature.parameters[name].annotation
-        # print(name, annotation, value)
         if annotation is inspect.Parameter.empty:
             continue
         try:
