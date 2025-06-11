@@ -220,3 +220,92 @@ class SimpleClass:
 >print(result)
 >```
 > {'simple_class': <class 'builders.SimpleClass'>}
+
+
+### Elements access before construction 
+Sometimes you may need to access elements of the config before construction.
+For example, if you need to build some neural network model for testing but using training config.
+You can access elements of the config after parsing via `.` or `[]`: `config.model`, `config["model"]`.
+Then you can operate with this config node like with usual parsed config. 
+For example, you can construct it, even if it has links to other parts of the config(you will have to use NonSequentialConstructor or just `.construct()` method for this).
+
+<table>
+<tr><th>config.nip</th><th>builder.nip</th></tr>
+<tr><td>
+
+```yaml
+model: !MyCoolModel
+  input_shape: *shape
+  num_layers: 42
+
+train_dataset: !ImageDataset
+  output_shape: &shape (256, 256)
+  path: "dataset/path"
+
+trainer: !Trainer
+  num_gpus: 8
+  log_dir: "path/to/logs"
+``` 
+</td><td>
+
+```python
+from nip import nip
+
+
+@nip
+class MyCoolModel:
+    def __init__(self, in_channels, num_layers):
+        pass
+```
+</td></tr></table>
+
+>```python
+>import nip
+>import builders
+>
+>config = nip.load("config.nip")
+>model = config.model.construct()
+>assert isinstance(model, builders.MyCoolModel)
+>print(model)
+>```
+> <builders.MyCoolModel object at 0x000002205FC45700>
+
+### Directives 
+You can modify the config during parsing stage with directives. All directives start with `!!` operator.
+Currently there is only one presented directive in NIP: `!!insert`.
+It allows you to insert other configs as a node into current config. 
+It can be used in 2 variants: simple config insert (`!!insert "path/to/config.nip"`) and insert with vars substitution (see the example below).
+
+
+<table>
+<tr><th>config.nip</th><th>builder.nip</th></tr>
+<tr><td>
+
+```yaml
+
+``` 
+</td><td>
+
+```python
+from nip import nip
+
+
+@nip
+class MyCoolModel:
+    def __init__(self, in_channels, num_layers):
+        pass
+```
+</td></tr></table>
+
+>```python
+>import nip
+>import builders
+>
+>config = nip.load("config.nip")
+>model = config.model.construct()
+>assert isinstance(model, builders.MyCoolModel)
+>print(model)
+>```
+> <builders.MyCoolModel object at 0x000002205FC45700>
+
+
