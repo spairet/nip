@@ -20,7 +20,7 @@ def test_complex():
     assert isinstance(result.childs[1], SmallButValuableClass) and result.childs[1].just_name == "Pepe"
 
 
-def test_no_defalut_dumper():
+def test_no_default_dumper():
     import some_classes
     import nip
 
