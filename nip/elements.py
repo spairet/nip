@@ -37,9 +37,11 @@ class Node(ABC, object):
 
     def __getitem__(self, item):
         if not isinstance(item, (str, int)):
-            raise KeyError(f"Unexpected item type: {type(item)}")
+            raise TypeError(f"Unexpected item type: {type(item)}. str or int are expected.")
         if isinstance(item, str) and len(item) == 0:
             return self
+        if self._value is None:
+            raise KeyError(f"'{item}' is not a part of the Node.")
         return self._value[item]
 
     def __getattr__(self, item):  # unable to access names like `construct` and 'dump` via this method
@@ -48,6 +50,11 @@ class Node(ABC, object):
     def __setitem__(self, key, value):
         self._value[key] = value
         self._value._parent = self
+
+    def __contains__(self, item):
+        if not isinstance(self._value, Node):
+            return False
+        return item in self._value
 
     def __setattr__(self, key, value):
         if key.startswith("_"):  # mb: ensure not user's node name?
@@ -196,7 +203,7 @@ class Link(Node):
         if read_tokens is None:
             return None
 
-        name = read_tokens[1]._value
+        name = read_tokens[1]._value  # mb: use LinkCreation node as value. fixes `in` operator.
         stream.step()
 
         if name in parser.link_replacements:
@@ -215,6 +222,12 @@ class Link(Node):
 
     def _dump(self, dumper: nip.dumper.Dumper):
         return f"*{self._name}"
+
+    def __getitem__(self, item):
+        raise NotImplementedError("'__getitem__' is not implemented for Link node.")
+
+    def __contains__(self, item):
+        raise NotImplementedError("'in' operator if not implemented for Link node.")
 
 
 class Tag(Node):
@@ -371,24 +384,48 @@ class Args(Node):
 
     def __getitem__(self, item):
         if not isinstance(item, (str, int)):
-            raise KeyError(f"Unexpected item type: {type(item)}")
-        if isinstance(item, str) and len(item) == 0:
-            return self
+            raise TypeError(f"Unexpected item type: {type(item)}. str or int are expected.")
+        # if isinstance(item, str) and len(item) == 0:
+        #     return self
         if isinstance(item, int):
-            return self._value[0][item]
-        key = None
-        for key in self._value[1]:
-            if item.startswith(key):
-                break
-        if not item.startswith(key):
-            raise KeyError(f"'{item}' is not a part of the Node.")
-        if len(item) == len(key):
-            return self._value[1][key]
-        if item[len(key)] != ".":
-            raise KeyError(f"items should be separated by a dot '.'.")
+            if 0 <= item < len(self._value[0]):
+                return self._value[0][item]
+            raise KeyError(
+                f"Unexpected arg index: {item}. Node contains only {len(self._value[0])} positional arguments."
+            )
 
-        item = item[len(key) + 1 :]
-        return self._value[1][key][item]
+        if len(self._value[1]) == 0:
+            raise KeyError(f"'{item}' is not a part of the Node.")
+        for key in self._value[1]:  # this pattern because dict keys may contain dots. mb: fix ambiguity
+            if item.startswith(key):
+                if len(item) == len(key):
+                    return self._value[1][key]
+                if item[len(key)] != ".":
+                    continue
+                sub_item = item[len(key) + 1 :]
+                return self._value[1][key][sub_item]
+        raise KeyError(f"'{item}' is not a part of the Node.")
+
+    def __contains__(self, item):
+        if not isinstance(item, (str, int)):
+            raise TypeError(f"Unexpected item type: {type(item)}. str or int are expected.")
+        if isinstance(item, int):
+            if 0 <= item < len(self._value[0]):
+                return True
+            return False
+        if len(self._value[1]) == 0:
+            return False
+        result = False
+        for key in self._value[1]:  # mb: ambiguity due to dots in names.
+            if item.startswith(key):
+                if len(item) == len(key):
+                    return True
+                if item[len(key)] != ".":
+                    continue
+                sub_item = item[len(key) + 1 :]
+                result = result or (sub_item in self._value[1][key])
+
+        return result
 
     def __setitem__(self, key, value):
         value = nip.convert(value)
