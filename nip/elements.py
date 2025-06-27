@@ -22,7 +22,7 @@ _LOGGER = logging.getLogger(__name__)
 class Node(ABC, object):
     """Base token for nip file"""
 
-    def __init__(self, name: str = "", value: Union[Node, Any] = None):
+    def __init__(self, name: str = "", value: Any = None):
         self._name = name
         self._value = value
         self._parent = None
@@ -303,6 +303,13 @@ class Class(Node):
 
 
 class Args(Node):
+    def __init__(self, args, kwargs, name: str = ""):
+        self._name = name
+        self._args = args
+        self._kwargs = kwargs
+        self._value = None  # to prevent step into
+        self._parent = None
+
     @classmethod
     def read(cls, stream: nip.stream.Stream, parser: nip.parser.Parser) -> Union[Args, None]:
         start_indent = stream.pos
@@ -338,7 +345,7 @@ class Args(Node):
 
         if not args and not kwargs:
             return None
-        return Args("args", (args, kwargs))
+        return Args(args, kwargs, "args")
 
     @classmethod
     def _read_list_item(cls, stream: nip.stream.Stream, parser: nip.parser.Parser) -> Union[Node, None]:
@@ -379,8 +386,17 @@ class Args(Node):
 
         return f"{self.__class__.__name__}('{self._name}', {args_repr}, {kwargs_repr})"
 
-    def __bool__(self):
-        return bool(self._value[0]) or bool(self._value[1])
+    def __bool__(self):  # mb: should always be True.
+        return bool(self._args) or bool(self._kwargs)
+
+    def _is_list(self):
+        return len(self._args) > 0 and len(self._kwargs) == 0
+
+    def _is_dict(self):
+        return len(self._args) == 0 and len(self._kwargs) > 0
+
+    def _is_args(self):
+        return len(self._args) > 0 and len(self._kwargs) > 0
 
     def __getitem__(self, item):
         if not isinstance(item, (str, int)):
@@ -388,75 +404,76 @@ class Args(Node):
         # if isinstance(item, str) and len(item) == 0:
         #     return self
         if isinstance(item, int):
-            if 0 <= item < len(self._value[0]):
-                return self._value[0][item]
-            raise KeyError(
-                f"Unexpected arg index: {item}. Node contains only {len(self._value[0])} positional arguments."
-            )
+            if 0 <= item < len(self._args):
+                return self._args[item]
+            raise KeyError(f"Unexpected arg index: {item}. Node contains only {len(self._args)} positional arguments.")
 
-        if len(self._value[1]) == 0:
+        if len(self._kwargs) == 0:
             raise KeyError(f"'{item}' is not a part of the Node.")
-        for key in self._value[1]:  # this pattern because dict keys may contain dots. mb: fix ambiguity
+        for key in self._kwargs:  # this pattern because dict keys may contain dots. mb: fix ambiguity.
             if item.startswith(key):
                 if len(item) == len(key):
-                    return self._value[1][key]
+                    return self._kwargs[key]
                 if item[len(key)] != ".":
                     continue
                 sub_item = item[len(key) + 1 :]
-                return self._value[1][key][sub_item]
+                return self._kwargs[key][sub_item]
         raise KeyError(f"'{item}' is not a part of the Node.")
 
     def __contains__(self, item):
         if not isinstance(item, (str, int)):
             raise TypeError(f"Unexpected item type: {type(item)}. str or int are expected.")
         if isinstance(item, int):
-            if 0 <= item < len(self._value[0]):
+            if 0 <= item < len(self._args):
                 return True
             return False
-        if len(self._value[1]) == 0:
+        if len(self._kwargs) == 0:
             return False
         result = False
-        for key in self._value[1]:  # mb: ambiguity due to dots in names.
+        for key in self._kwargs:  # mb: ambiguity due to dots in names.
             if item.startswith(key):
                 if len(item) == len(key):
                     return True
                 if item[len(key)] != ".":
                     continue
                 sub_item = item[len(key) + 1 :]
-                result = result or (sub_item in self._value[1][key])
+                result = result or (sub_item in self._kwargs[key])
 
         return result
 
     def __setitem__(self, key, value):
-        value = nip.convert(value)
+        if not isinstance(value, Node):
+            value = nip.convert(value)
+        if isinstance(value, Document):  # this convenient for user. but do not insert Document node inside the tree.
+            value = value._value
         if isinstance(key, int):
-            if not -1 <= key < len(self._value[0]):
+            if not -1 <= key < len(self._args):
                 raise KeyError(
-                    f"You can only access existing positional arguments or add new one using -1 key. "
-                    f"Index {key} is out of range [-1, {len(self._value[0]) - 1}]."
+                    f"You can only change existing positional arguments or add new one using `-1` or `length` key. "
+                    f"Index {key} is out of range [-1, {len(self._args) - 1}]."
                 )
-            if key == -1:
-                self._value[0].append(value)
-            self._value[0][key] = value
+            if key == -1 or key == len(self._args):
+                self._args.append(value)
+            self._args[key] = value
         else:
-            self._value[1][key] = value
+            self._kwargs[key] = value
 
     def append(self, value):
-        self._value[0].append(nip.convert(value))
+        self._args.append(nip.convert(value))
 
     def __len__(self):
-        return len(self._value[0]) + len(self._value[1])
+        return len(self._args) + len(self._kwargs)
 
     def __iter__(self):
-        for item in self._value[0]:
-            yield item
-        for key, item in self._value[1].items():
-            yield item
+        for i, item in enumerate(self._args):
+            yield i, item
+        for key, item in self._kwargs.items():
+            yield key, item
 
     def to_python(self):
-        args = list(item.to_python() for item in self._value[0])
-        kwargs = {key: value.to_python() for key, value in self._value[1].items()}
-        assert args or kwargs, "Error converting Args node to python"  # This should never happen
+        args = list(item.to_python() for item in self._args)
+        kwargs = {key: value.to_python() for key, value in self._kwargs.items()}
+        assert args or kwargs, "Error converting Args node to python."  # This should never happen
         if args and kwargs:
             result = {}
             result.update(nip.utils.iterate_items(args))
@@ -465,23 +482,23 @@ class Args(Node):
         return args or kwargs
 
     def _construct(self, constructor: nip.constructor.Constructor, always_pair=False):
-        args = list(item._construct(constructor) for item in self._value[0])
-        kwargs = {key: value._construct(constructor) for key, value in self._value[1].items()}
-        assert args or kwargs, "Error converting Args node to python"  # This should never happen
+        args = list(item._construct(constructor) for item in self._args)
+        kwargs = {key: value._construct(constructor) for key, value in self._kwargs.items()}
+        assert args or kwargs, "Error converting Args node."  # This should never happen
         if args and kwargs or always_pair:
             return args, kwargs
         return args or kwargs
 
     def _dump(self, dumper: nip.dumper.Dumper):
         dumped_args = "\n".join(
-            [" " * dumper.indent + f"- {item._dump(dumper + dumper.default_shift)}" for item in self._value[0]]
+            [" " * dumper.indent + f"- {item._dump(dumper + dumper.default_shift)}" for item in self._args]
         )
         string = ("\n" if dumped_args else "") + dumped_args
 
         dumped_kwargs = "\n".join(
             [
                 " " * dumper.indent + f"{key}: {value._dump(dumper + dumper.default_shift)}"
-                for key, value in self._value[1].items()
+                for key, value in self._kwargs.items()
             ]
         )
         string += ("\n" if dumped_kwargs else "") + dumped_kwargs
@@ -489,8 +506,8 @@ class Args(Node):
         return string
 
     def _update_parents(self):
-        self.__dict__.update(self._value[1])
-        for item in self:
+        self.__dict__.update(self._kwargs)
+        for key, item in self:
             item._parent = self
             item._update_parents()
 
@@ -508,9 +525,9 @@ class Iter(Node):  # mark all parents as Iterable and allow construct specific i
             return None
         stream.step()
         value = read_node(stream, parser)
-        if isinstance(value, Value) and isinstance(value._value, list):
+        if isinstance(value, Value) and isinstance(value._value, list):  # mb: replace inline list with Node
             value = value._value
-        elif isinstance(value, Args) and len(value._value[1]) == 0:
+        elif isinstance(value, Args) and value._is_list():
             value = value
         else:
             raise nip.parser.ParserError(stream, "List is expected as a value for Iterable node")

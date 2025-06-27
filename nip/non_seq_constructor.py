@@ -55,7 +55,7 @@ class NonSequentialConstructor(Constructor):
             assert node._name not in self.links, "Redefined link."
             self.links[node._name] = node
         if isinstance(node, nip.elements.Args):
-            for sub_node in node:
+            for key, sub_node in node:
                 self._find_links(sub_node)
         if isinstance(node._value, nip.elements.Node):
             self._find_links(node._value)
