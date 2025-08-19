@@ -1,10 +1,16 @@
 def test_config():
-    from nip import parse, dump
+    from nip import parse, dump, load
 
     config = parse("features/modification/configs/config.nip")
     config["main"]["first"] = "modified_value"
-    config["main"]["second"] = (1, 3)
+    config["main.second"] = (1, 3)
+    config.main.third = "third_value"
     dump("features/modification/dumps/config.nip", config)
+    data = load("features/modification/dumps/config.nip")
+    assert data["main"]["first"] == "modified_value"
+    assert data["main"]["second"] == [1, 3]  # not tuple actually... mb: make is consistent
+    assert data["main"]["third"] == "third_value"
+    # mb: make this test more complex with deep comparison with result
 
 
 def test_object():

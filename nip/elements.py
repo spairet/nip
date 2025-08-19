@@ -398,65 +398,70 @@ class Args(Node):
     def _is_args(self):
         return len(self._args) > 0 and len(self._kwargs) > 0
 
-    def __getitem__(self, item):
+    def _get_sub_item(self, item):
+        # some.deep.0.parameter -> [some.deep][0][parameter] / [some][deep][0][parameter]
         if not isinstance(item, (str, int)):
             raise TypeError(f"Unexpected item type: {type(item)}. str or int are expected.")
-        # if isinstance(item, str) and len(item) == 0:
-        #     return self
-        if isinstance(item, int):
-            if 0 <= item < len(self._args):
-                return self._args[item]
-            raise KeyError(f"Unexpected arg index: {item}. Node contains only {len(self._args)} positional arguments.")
 
-        if len(self._kwargs) == 0:
-            raise KeyError(f"'{item}' is not a part of the Node.")
-        for key in self._kwargs:  # this pattern because dict keys may contain dots. mb: fix ambiguity.
+        if isinstance(item, int) or item.isnumeric():
+            item = int(item)
+            if 0 <= item < len(self._args):
+                return None, self._args[item]
+            return None, None
+        key = item.split(".")[0]
+        if key.isnumeric():
+            return item[len(key) + 1 :], self._args[int(key)]
+        for key in self._kwargs:
             if item.startswith(key):
                 if len(item) == len(key):
-                    return self._kwargs[key]
+                    return None, self._kwargs[key]
                 if item[len(key)] != ".":
                     continue
-                sub_item = item[len(key) + 1 :]
-                return self._kwargs[key][sub_item]
-        raise KeyError(f"'{item}' is not a part of the Node.")
+                return item[len(key) + 1 :], self._kwargs[key]
+        return None, None
+
+    def _set_sub_item(self, key, value):
+        if isinstance(key, int) or key.isnumeric():
+            key = int(key)
+            if 0 <= key < len(self._args):
+                self._args[key] = value
+            elif key == len(self._args):
+                self._args.append(value)
+            else:
+                raise KeyError("You may only update existing arg of the Node or add one using `len(args)` as index")
+        else:
+            self._kwargs[key] = value
+
+    def __getitem__(self, item) -> Node:
+        left_key, node = self._get_sub_item(item)
+        if node is None:
+            raise KeyError(f"'{item}' is not a part of the Node.")
+        if left_key:  # step deeper
+            return node[left_key]
+        return node
 
     def __contains__(self, item):
-        if not isinstance(item, (str, int)):
-            raise TypeError(f"Unexpected item type: {type(item)}. str or int are expected.")
-        if isinstance(item, int):
-            if 0 <= item < len(self._args):
-                return True
+        left_key, node = self._get_sub_item(item)
+        if node is None:
             return False
-        if len(self._kwargs) == 0:
-            return False
-        result = False
-        for key in self._kwargs:  # mb: ambiguity due to dots in names.
-            if item.startswith(key):
-                if len(item) == len(key):
-                    return True
-                if item[len(key)] != ".":
-                    continue
-                sub_item = item[len(key) + 1 :]
-                result = result or (sub_item in self._kwargs[key])
-
-        return result
+        if left_key:  # step deeper
+            return left_key in node
+        return True
 
     def __setitem__(self, key, value):
         if not isinstance(value, Node):
             value = nip.convert(value)
         if isinstance(value, Document):  # this convenient for user. but do not insert Document node inside the tree.
             value = value._value
-        if isinstance(key, int):
-            if not -1 <= key < len(self._args):
-                raise KeyError(
-                    f"You can only change existing positional arguments or add new one using `-1` or `length` key. "
-                    f"Index {key} is out of range [-1, {len(self._args) - 1}]."
-                )
-            if key == -1 or key == len(self._args):
-                self._args.append(value)
-            self._args[key] = value
-        else:
-            self._kwargs[key] = value
+
+        left_key, node = self._get_sub_item(key)
+        if node is None:  # new sub
+            self._set_sub_item(key, value)
+            return
+        if left_key:  # step deeper
+            node[left_key] = value
+        else:  # update sub
+            self._set_sub_item(key, value)
 
     def append(self, value):
         self._args.append(nip.convert(value))

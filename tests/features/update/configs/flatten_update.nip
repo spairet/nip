@@ -1,0 +1,4 @@
+params.second: "updated_two"
+some_class.name: "qwe"
+some.deep.0.parameter: 42
+some.deep.1: "new_list_param"
