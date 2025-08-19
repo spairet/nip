@@ -123,7 +123,7 @@ def load(
     path: Union[str, Path],
     always_iter: bool = False,
     strict: bool = False,
-    nonsequential: bool = False,
+    nonsequential: bool = True,
 ) -> Union[Any, Iterable[Any]]:
     """Parses config and constructs python object
     Parameters
