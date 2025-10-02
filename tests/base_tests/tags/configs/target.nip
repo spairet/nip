@@ -1,0 +1,18 @@
+array: !numpy.zeros [2, 3, 4]
+
+array_2:
+  _target_: numpy.zeros
+  - [1, 2, 3]
+
+obj:
+  _target_: utils.builders.SimpleClass
+  name: "Hello World!"
+
+func:
+  _target_: myfunc
+  a: 1
+  c: 2
+
+single:
+  _target_: myfunc
+  - 1

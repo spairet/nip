@@ -1,5 +1,7 @@
 import pytest
 
+import nip.constructor
+
 
 def test_numpy():
     import numpy as np
@@ -52,8 +54,10 @@ def test_empty_construction():
 
 def test_no_args():
     from nip import load
+    from nip.constructor import ConstructorError
+    from utils import builders
 
-    with pytest.raises(TypeError, match="missing 1 required positional argument:"):
+    with pytest.raises(ConstructorError, match="missing 1 required positional argument: 'a'"):
         load("base_tests/tags/configs/no_args_func_error.nip")
 
 
@@ -72,3 +76,20 @@ def test_multi_tag():
         and isinstance(result["second_object"], builders.MultiTagClass)
         and result["second_object"].name == "cba"
     )
+
+
+def test_target():
+    import nip
+    import numpy as np
+    from utils import builders
+
+    result = nip.load("base_tests/tags/configs/target.nip")
+    assert len(result.keys()) and "array" in result
+    assert np.all(result["array"] == np.zeros((2, 3, 4)))
+    assert np.all(result["array_2"] == np.zeros((1, 2, 3)))
+    assert isinstance(result["obj"], builders.SimpleClass)
+    assert result["obj"].name == "Hello World!"
+    assert "func" in result
+    assert result["func"] == 7
+    assert "single" in result
+    assert result["single"] == 1
