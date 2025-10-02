@@ -1,13 +1,13 @@
 from pathlib import Path
 from typing import Union, Any, Iterable, Callable, Optional
 
+from nip.parser.parse_func import parse, parse_string
+from nip.update import update_flatten, update
 from . import elements
 from .constructor import Constructor
 from .convertor import Convertor
 from .dumper import Dumper
-from .iter_parser import IterParser
 from .non_seq_constructor import NonSequentialConstructor
-from .parser import Parser
 
 __all__ = [
     "parse",
@@ -19,67 +19,9 @@ __all__ = [
     "dump",
     "dump_string",
     "convert",
+    "update",
+    "update_flatten",
 ]
-
-
-def parse(
-    path: Union[str, Path],
-    always_iter: bool = False,
-    implicit_fstrings: bool = True,
-    strict: bool = False,
-) -> Union[elements.Node, Iterable[elements.Node]]:
-    """Parses config providing Element tree
-
-    Parameters
-    ----------
-    path: str or Path
-        path to config file
-    always_iter: bool
-        If True will always return iterator over configs.
-    implicit_fstrings: boot, default: True
-        If True, all quoted strings will be treated as python f-strings.
-    strict:
-        It True, checks overwriting dict keys and positioning (`args` before `kwargs`).
-
-    Returns
-    -------
-    tree: Element or Iterable[Element]
-    """
-    parser = Parser(implicit_fstrings=implicit_fstrings, strict=strict)
-    tree = parser.parse(path)
-    if parser.has_iterators() or always_iter:
-        return IterParser(parser).iter_configs(tree)
-    return tree
-
-
-def parse_string(
-    config_string: str,
-    always_iter: bool = False,
-    implicit_fstrings: bool = True,
-    strict: bool = False,
-) -> Union[elements.Node, Iterable[elements.Node]]:
-    """Parses config providing Element tree
-
-    Parameters
-    ----------
-    config_string: str
-        Config as a string.
-    always_iter: bool
-        If True will always return iterator over configs.
-    implicit_fstrings: boot, default: True
-        If True, all quoted strings will be treated as python f-strings.
-    strict:
-        It True, checks overwriting dict keys and positioning (`args` before `kwargs`).
-
-    Returns
-    -------
-    tree: Element or Iterable[Element]
-    """
-    parser = Parser(implicit_fstrings=implicit_fstrings, strict=strict)
-    tree = parser.parse_string(config_string)
-    if parser.has_iterators() or always_iter:
-        return IterParser(parser).iter_configs(tree)
-    return tree
 
 
 def construct(
@@ -190,8 +132,7 @@ def dump(path: Union[str, Path], obj: Union[elements.Node, object]):
         Read or generated config if Element. In case of any other object `convert` will be called.
     """
     if not isinstance(obj, elements.Node):
-        obj = convert(obj)
-        # mb: wrap with Document to ensure getting `---` at the beginning of the file.
+        obj = convert(obj)  # mb: wrap with Document to ensure getting `---` at the beginning of the file.
     dumper = Dumper()
     dumper.dump(path, obj)
 

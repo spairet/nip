@@ -1,0 +1,10 @@
+params:
+  first: 1
+  second: "two"
+
+some_class: !SimpleClass
+  name: "abc"
+
+some:
+  deep:
+    - parameter: 17

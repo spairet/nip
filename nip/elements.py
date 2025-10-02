@@ -22,7 +22,7 @@ _LOGGER = logging.getLogger(__name__)
 class Node(ABC, object):
     """Base token for nip file"""
 
-    def __init__(self, name: str = "", value: Union[Node, Any] = None):
+    def __init__(self, name: str = "", value: Any = None):
         self._name = name
         self._value = value
         self._parent = None
@@ -37,9 +37,11 @@ class Node(ABC, object):
 
     def __getitem__(self, item):
         if not isinstance(item, (str, int)):
-            raise KeyError(f"Unexpected item type: {type(item)}")
+            raise TypeError(f"Unexpected item type: {type(item)}. str or int are expected.")
         if isinstance(item, str) and len(item) == 0:
             return self
+        if self._value is None:
+            raise KeyError(f"'{item}' is not a part of the Node.")
         return self._value[item]
 
     def __getattr__(self, item):  # unable to access names like `construct` and 'dump` via this method
@@ -48,6 +50,11 @@ class Node(ABC, object):
     def __setitem__(self, key, value):
         self._value[key] = value
         self._value._parent = self
+
+    def __contains__(self, item):
+        if not isinstance(self._value, Node):
+            return False
+        return item in self._value
 
     def __setattr__(self, key, value):
         if key.startswith("_"):  # mb: ensure not user's node name?
@@ -196,7 +203,7 @@ class Link(Node):
         if read_tokens is None:
             return None
 
-        name = read_tokens[1]._value
+        name = read_tokens[1]._value  # mb: use LinkCreation node as value. fixes `in` operator.
         stream.step()
 
         if name in parser.link_replacements:
@@ -215,6 +222,12 @@ class Link(Node):
 
     def _dump(self, dumper: nip.dumper.Dumper):
         return f"*{self._name}"
+
+    def __getitem__(self, item):
+        raise NotImplementedError("'__getitem__' is not implemented for Link node.")
+
+    def __contains__(self, item):
+        raise NotImplementedError("'in' operator if not implemented for Link node.")
 
 
 class Tag(Node):
@@ -290,6 +303,13 @@ class Class(Node):
 
 
 class Args(Node):
+    def __init__(self, args, kwargs, name: str = ""):
+        self._name = name
+        self._args = args
+        self._kwargs = kwargs
+        self._value = None  # to prevent step into
+        self._parent = None
+
     @classmethod
     def read(cls, stream: nip.stream.Stream, parser: nip.parser.Parser) -> Union[Args, None]:
         start_indent = stream.pos
@@ -325,7 +345,7 @@ class Args(Node):
 
         if not args and not kwargs:
             return None
-        return Args("args", (args, kwargs))
+        return Args(args, kwargs, "args")
 
     @classmethod
     def _read_list_item(cls, stream: nip.stream.Stream, parser: nip.parser.Parser) -> Union[Node, None]:
@@ -361,65 +381,104 @@ class Args(Node):
         return key, value
 
     def __str__(self):
-        args_repr = "[" + ", ".join([str(item) for item in self._value[0]]) + "]"
-        kwargs_repr = "{" + ", ".join([f"{key}: {str(value)}" for key, value in self._value[1].items()]) + "}"
+        args_repr = "[" + ", ".join([str(item) for item in self._args]) + "]"
+        kwargs_repr = "{" + ", ".join([f"{key}: {str(value)}" for key, value in self._kwargs.items()]) + "}"
 
         return f"{self.__class__.__name__}('{self._name}', {args_repr}, {kwargs_repr})"
 
-    def __bool__(self):
-        return bool(self._value[0]) or bool(self._value[1])
+    def __bool__(self):  # mb: should always be True.
+        return bool(self._args) or bool(self._kwargs)
 
-    def __getitem__(self, item):
+    def _is_list(self):
+        return len(self._args) > 0 and len(self._kwargs) == 0
+
+    def _is_dict(self):
+        return len(self._args) == 0 and len(self._kwargs) > 0
+
+    def _is_args(self):
+        return len(self._args) > 0 and len(self._kwargs) > 0
+
+    def _get_sub_item(self, item):
+        # some.deep.0.parameter -> [some.deep][0][parameter] / [some][deep][0][parameter]
         if not isinstance(item, (str, int)):
-            raise KeyError(f"Unexpected item type: {type(item)}")
-        if isinstance(item, str) and len(item) == 0:
-            return self
-        if isinstance(item, int):
-            return self._value[0][item]
-        key = None
-        for key in self._value[1]:
-            if item.startswith(key):
-                break
-        if not item.startswith(key):
-            raise KeyError(f"'{item}' is not a part of the Node.")
-        if len(item) == len(key):
-            return self._value[1][key]
-        if item[len(key)] != ".":
-            raise KeyError(f"items should be separated by a dot '.'.")
+            raise TypeError(f"Unexpected item type: {type(item)}. str or int are expected.")
 
-        item = item[len(key) + 1 :]
-        return self._value[1][key][item]
+        if isinstance(item, int) or item.isnumeric():
+            item = int(item)
+            if 0 <= item < len(self._args):
+                return None, self._args[item]
+            return None, None
+        key = item.split(".")[0]
+        if key.isnumeric():
+            return item[len(key) + 1 :], self._args[int(key)]
+        for key in self._kwargs:
+            if item.startswith(key):
+                if len(item) == len(key):
+                    return None, self._kwargs[key]
+                if item[len(key)] != ".":
+                    continue
+                return item[len(key) + 1 :], self._kwargs[key]
+        return None, None
+
+    def _set_sub_item(self, key, value):
+        if isinstance(key, int) or key.isnumeric():
+            key = int(key)
+            if 0 <= key < len(self._args):
+                self._args[key] = value
+            elif key == len(self._args):
+                self._args.append(value)
+            else:
+                raise KeyError("You may only update existing arg of the Node or add one using `len(args)` as index")
+        else:
+            self._kwargs[key] = value
+
+    def __getitem__(self, item) -> Node:
+        left_key, node = self._get_sub_item(item)
+        if node is None:
+            raise KeyError(f"'{item}' is not a part of the Node.")
+        if left_key:  # step deeper
+            return node[left_key]
+        return node
+
+    def __contains__(self, item):
+        left_key, node = self._get_sub_item(item)
+        if node is None:
+            return False
+        if left_key:  # step deeper
+            return left_key in node
+        return True
 
     def __setitem__(self, key, value):
-        value = nip.convert(value)
-        if isinstance(key, int):
-            if not -1 <= key < len(self._value[0]):
-                raise KeyError(
-                    f"You can only access existing positional arguments or add new one using -1 key. "
-                    f"Index {key} is out of range [-1, {len(self._value[0]) - 1}]."
-                )
-            if key == -1:
-                self._value[0].append(value)
-            self._value[0][key] = value
-        else:
-            self._value[1][key] = value
+        if not isinstance(value, Node):
+            value = nip.convert(value)
+        if isinstance(value, Document):  # this convenient for user. but do not insert Document node inside the tree.
+            value = value._value
+
+        left_key, node = self._get_sub_item(key)
+        if node is None:  # new sub
+            self._set_sub_item(key, value)
+            return
+        if left_key:  # step deeper
+            node[left_key] = value
+        else:  # update sub
+            self._set_sub_item(key, value)
 
     def append(self, value):
-        self._value[0].append(nip.convert(value))
+        self._args.append(nip.convert(value))
 
     def __len__(self):
-        return len(self._value[0]) + len(self._value[1])
+        return len(self._args) + len(self._kwargs)
 
     def __iter__(self):
-        for item in self._value[0]:
-            yield item
-        for key, item in self._value[1].items():
-            yield item
+        for i, item in enumerate(self._args):
+            yield i, item
+        for key, item in self._kwargs.items():
+            yield key, item
 
     def to_python(self):
-        args = list(item.to_python() for item in self._value[0])
-        kwargs = {key: value.to_python() for key, value in self._value[1].items()}
-        assert args or kwargs, "Error converting Args node to python"  # This should never happen
+        args = list(item.to_python() for item in self._args)
+        kwargs = {key: value.to_python() for key, value in self._kwargs.items()}
+        assert args or kwargs, "Error converting Args node to python."  # This should never happen
         if args and kwargs:
             result = {}
             result.update(nip.utils.iterate_items(args))
@@ -428,23 +487,23 @@ class Args(Node):
         return args or kwargs
 
     def _construct(self, constructor: nip.constructor.Constructor, always_pair=False):
-        args = list(item._construct(constructor) for item in self._value[0])
-        kwargs = {key: value._construct(constructor) for key, value in self._value[1].items()}
-        assert args or kwargs, "Error converting Args node to python"  # This should never happen
+        args = list(item._construct(constructor) for item in self._args)
+        kwargs = {key: value._construct(constructor) for key, value in self._kwargs.items()}
+        assert args or kwargs, "Error converting Args node."  # This should never happen
         if args and kwargs or always_pair:
             return args, kwargs
         return args or kwargs
 
     def _dump(self, dumper: nip.dumper.Dumper):
         dumped_args = "\n".join(
-            [" " * dumper.indent + f"- {item._dump(dumper + dumper.default_shift)}" for item in self._value[0]]
+            [" " * dumper.indent + f"- {item._dump(dumper + dumper.default_shift)}" for item in self._args]
         )
         string = ("\n" if dumped_args else "") + dumped_args
 
         dumped_kwargs = "\n".join(
             [
                 " " * dumper.indent + f"{key}: {value._dump(dumper + dumper.default_shift)}"
-                for key, value in self._value[1].items()
+                for key, value in self._kwargs.items()
             ]
         )
         string += ("\n" if dumped_kwargs else "") + dumped_kwargs
@@ -452,8 +511,8 @@ class Args(Node):
         return string
 
     def _update_parents(self):
-        self.__dict__.update(self._value[1])
-        for item in self:
+        self.__dict__.update(self._kwargs)
+        for key, item in self:
             item._parent = self
             item._update_parents()
 
@@ -471,9 +530,9 @@ class Iter(Node):  # mark all parents as Iterable and allow construct specific i
             return None
         stream.step()
         value = read_node(stream, parser)
-        if isinstance(value, Value) and isinstance(value._value, list):
+        if isinstance(value, Value) and isinstance(value._value, list):  # mb: replace inline list with Node
             value = value._value
-        elif isinstance(value, Args) and len(value._value[1]) == 0:
+        elif isinstance(value, Args) and value._is_list():
             value = value
         else:
             raise nip.parser.ParserError(stream, "List is expected as a value for Iterable node")

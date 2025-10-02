@@ -1,0 +1,9 @@
+params:
+  first: 2
+  second: "three"
+
+some_class:
+  name: "qwe"
+
+some:
+  deep.0.parameter: 42

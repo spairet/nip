@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import Union
 
 import nip.elements as elements
-from .stream import Stream
+from nip.stream import Stream
 
 
 class Parser:

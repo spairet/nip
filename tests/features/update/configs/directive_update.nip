@@ -1,0 +1,13 @@
+--- !!update
+_update_: features/update/configs/tree_update.nip
+
+params:
+  first: 1
+  second: "two"
+
+some_class: !SimpleClass
+  name: "abc"
+
+some:
+  deep:
+    - parameter: 17
