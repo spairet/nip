@@ -381,8 +381,8 @@ class Args(Node):
         return key, value
 
     def __str__(self):
-        args_repr = "[" + ", ".join([str(item) for item in self._value[0]]) + "]"
-        kwargs_repr = "{" + ", ".join([f"{key}: {str(value)}" for key, value in self._value[1].items()]) + "}"
+        args_repr = "[" + ", ".join([str(item) for item in self._args]) + "]"
+        kwargs_repr = "{" + ", ".join([f"{key}: {str(value)}" for key, value in self._kwargs.items()]) + "}"
 
         return f"{self.__class__.__name__}('{self._name}', {args_repr}, {kwargs_repr})"
 
