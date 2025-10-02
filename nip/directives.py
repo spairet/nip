@@ -31,19 +31,19 @@ def insert_directive(node, stream: Stream):  # mb: class; mb: just a Node, not a
 
 
 def update_directive(node, stream: Stream):  # mb: skip directive operator
-    if not isinstance(node, nip.elements.Args) or "__update__" not in node:
+    if not isinstance(node, nip.elements.Args) or "_update_" not in node:
         raise ParserError(stream, "!!update directive expects dict node with __update__ key.")
-    update_config_path = node["__update__"].to_python()
-    del node._kwargs["__update__"]
+    update_config_path = node["_update_"].to_python()
+    del node._kwargs["_update_"]
     return update(node, update_config_path)
 
 
 def base_directive(node, stream: Stream):  # mb: parent
-    if not isinstance(node, nip.elements.Args) or "__base__" not in node:
+    if not isinstance(node, nip.elements.Args) or "_base_" not in node:
         raise ParserError(stream, "!!base directive expects dict node with __base__ key.")
-    base_config_path = node["__base__"].to_python()
+    base_config_path = node["_base_"].to_python()
     base_config = parse(base_config_path)
-    del node._kwargs["__base__"]
+    del node._kwargs["_base_"]
     return update(base_config, node)
 
 

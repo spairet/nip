@@ -1,5 +1,5 @@
 --- !!update
-__update__: features/update/configs/tree_update.nip
+_update_: features/update/configs/tree_update.nip
 
 params:
   first: 1

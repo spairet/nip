@@ -1,5 +1,5 @@
 --- !!base
-__base__: features/update/configs/basic_config.nip
+_base_: features/update/configs/basic_config.nip
 
 params:
   first: 2
