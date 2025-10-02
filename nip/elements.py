@@ -22,10 +22,12 @@ _LOGGER = logging.getLogger(__name__)
 class Node(ABC, object):
     """Base token for nip file"""
 
-    def __init__(self, name: str = "", value: Any = None):
+    def __init__(self, name: str = "", value: Any = None, line: int = None, pos: int = 0):
         self._name = name
         self._value = value
         self._parent = None
+        self._line = line
+        self._pos = pos
 
     @classmethod
     @abstractmethod
@@ -104,21 +106,24 @@ Element = Node  # backward compatibility until 1.* version
 
 
 class Document(Node):  # ToDo: add multi document support
-    def __init__(self, name: str = "", value: Union[Node, Any] = None):
+    def __init__(self, name: str = "", value: Union[Node, Any] = None, line: int = None, pos: int = 0):
         super().__init__(name, value)
         self._path = None
+        self._line = line
+        self._pos = pos
 
     @classmethod
     def read(cls, stream: nip.stream.Stream, parser: nip.parser.Parser) -> Document:
+        line, pos = stream.line, stream.pos
         doc_name = cls._read_name(stream)
         content = read_node(stream, parser)
-        return Document(doc_name, content)
+        return Document(doc_name, content, line, pos)
 
     @classmethod
     def _read_name(cls, stream: nip.stream.Stream):
         read_tokens = stream.peek(tokens.Operator("---"), tokens.Name) or stream.peek(tokens.Operator("---"))
         if read_tokens is not None:
-            stream.step()
+            line, pos = stream.step()
             if len(read_tokens) == 2:
                 return read_tokens[1]._value
         return ""
@@ -147,8 +152,8 @@ class Value(Node):
         for token in tokens_list:
             read_tokens = stream.peek(token)
             if read_tokens is not None:
-                stream.step()
-                return Value(read_tokens[0]._name, read_tokens[0]._value)
+                line, pos = stream.step()
+                return Value(read_tokens[0]._name, read_tokens[0]._value, line=line, pos=pos)
 
         return None
 
@@ -178,14 +183,14 @@ class LinkCreation(Node):
             return None
 
         name = read_tokens[1]._value
-        stream.step()
+        line, pos = line, pos = stream.step()
 
         value = read_node(stream, parser)
         if name in parser.links:
             raise nip.parser.ParserError(stream, f"Redefining of link '{name}'")
         parser.links.append(name)
 
-        return LinkCreation(name, value)
+        return LinkCreation(name, value, line, pos)
 
     def _construct(self, constructor: nip.constructor.Constructor):
         if nsc.should_construct(self._name, constructor):
@@ -204,7 +209,7 @@ class Link(Node):
             return None
 
         name = read_tokens[1]._value  # mb: use LinkCreation node as value. fixes `in` operator.
-        stream.step()
+        line, pos = stream.step()
 
         if name in parser.link_replacements:
             return parser.link_replacements[name]
@@ -212,7 +217,7 @@ class Link(Node):
         if parser.sequential_links and name not in parser.links:
             nip.parser.ParserError(stream, "Link usage before assignment")
 
-        return Link(name)
+        return Link(name, line=line, pos=pos)
 
     def to_python(self):
         return "nil"  # something that means that object is not constructed yet.
@@ -237,11 +242,11 @@ class Tag(Node):
         if read_tokens is None:
             return None
         name = read_tokens[1]._value
-        stream.step()
+        line, pos = stream.step()
 
         value = read_node(stream, parser)
 
-        return Tag(name, value)
+        return Tag(name, value, line=line, pos=pos)
 
     def _construct(self, constructor: nip.constructor.Constructor):
         if isinstance(self._value, Args):
@@ -249,29 +254,11 @@ class Tag(Node):
         else:
             value = self._value._construct(constructor)
             if isinstance(value, Nothing):  # mb: Add IS_NOTHING method
-                return constructor.builders[self._name]()
+                args, kwargs = [], {}
             else:
                 args, kwargs = [value], {}
 
-        if self._name not in constructor.builders:
-            raise nip.constructor.ConstructorError(
-                self,
-                args,
-                kwargs,
-                f"Constructor for Tag '{self._name}' is not registered.",
-            )
-
-        messages = nip.utils.check_typing(constructor.builders[self._name], args, kwargs)
-        if len(messages) > 0:
-            if constructor.strict_typing:
-                raise nip.constructor.ConstructorError(self, args, kwargs, "\n".join(messages))
-            else:
-                _LOGGER.warning(f"Typing mismatch while constructing {self._name}:\n" + "\n".join(messages))
-
-        try:  # Try to construct
-            return constructor.builders[self._name](*args, **kwargs)
-        except Exception as e:
-            raise nip.constructor.ConstructorError(self, args, kwargs, e)
+        return nip.constructor.construct_with_args(self._name, args, kwargs, constructor, self)
 
     def _dump(self, dumper: nip.dumper.Dumper):
         return f"!{self._name} " + self._value._dump(dumper)
@@ -284,13 +271,13 @@ class Class(Node):
         if read_tokens is None:
             return None
         name = read_tokens[1]._value
-        stream.step()
+        line, pos = stream.step()
 
         value = read_node(stream, parser)
         if not isinstance(value, Nothing):
             raise nip.parser.ParserError(stream, "Class should be created with nothing to the right.")
 
-        return Class(name, value)
+        return Class(name, value, line=line, pos=pos)
 
     def _construct(self, constructor: nip.constructor.Constructor):
         value = self._value._construct(constructor)
@@ -303,12 +290,14 @@ class Class(Node):
 
 
 class Args(Node):
-    def __init__(self, args, kwargs, name: str = ""):
+    def __init__(self, args, kwargs, name: str = "", line=None, pos=None):
         self._name = name
         self._args = args
         self._kwargs = kwargs
         self._value = None  # to prevent step into
         self._parent = None
+        self._line = line
+        self._pos = pos
 
     @classmethod
     def read(cls, stream: nip.stream.Stream, parser: nip.parser.Parser) -> Union[Args, None]:
@@ -319,10 +308,12 @@ class Args(Node):
         args = []
         kwargs = {}  # mb: just dict with integer and string keys !
         read_kwarg = False
+        pos, read_pos = [None, None], None
         while stream and stream.pos == start_indent:
+            pos = pos or read_pos
             parser.last_indent = start_indent
 
-            item = cls._read_list_item(stream, parser)
+            item, read_pos = cls._read_list_item(stream, parser)
             if item is not None:
                 if parser.strict and read_kwarg:
                     raise nip.parser.ParserError(
@@ -332,7 +323,7 @@ class Args(Node):
                 args.append(item)
                 continue
 
-            key, value = cls._read_dict_pair(stream, parser, kwargs.keys())
+            key, value, read_pos = cls._read_dict_pair(stream, parser, kwargs.keys())
             if key is not None:
                 read_kwarg = True
                 kwargs[key] = value
@@ -345,28 +336,31 @@ class Args(Node):
 
         if not args and not kwargs:
             return None
-        return Args(args, kwargs, "args")
+        pos = pos or (None, None)
+        return Args(args, kwargs, "args", line=pos[0], pos=pos[1])
 
     @classmethod
-    def _read_list_item(cls, stream: nip.stream.Stream, parser: nip.parser.Parser) -> Union[Node, None]:
+    def _read_list_item(
+        cls, stream: nip.stream.Stream, parser: nip.parser.Parser
+    ) -> Union[Tuple[Node, Tuple[int, int]], Tuple[None, None]]:
         read_tokens = stream.peek(tokens.Operator("- "))
         if read_tokens is None:
-            return None
-        stream.step()
+            return None, None
+        line, pos = stream.step()
 
         value = read_node(stream, parser)
 
-        return value
+        return value, (line, pos)
 
     @classmethod
     def _read_dict_pair(
         cls, stream: nip.stream.Stream, parser: nip.parser.Parser, kwargs_keys
-    ) -> Union[Tuple[str, Node], Tuple[None, None]]:
+    ) -> Union[Tuple[str, Node, Tuple[int, int]], Tuple[None, None, None]]:
         # mb: read String instead of Name for keys with spaces,
         # mb: but this leads to the case that
         read_tokens = stream.peek(tokens.Name, tokens.Operator(": "))
         if read_tokens is None:
-            return None, None
+            return None, None, None
 
         key = read_tokens[0]._value
         if parser.strict and key in kwargs_keys:
@@ -374,11 +368,11 @@ class Args(Node):
                 stream,
                 f"Dict key overwriting is forbidden in `strict` " f"mode. Overwritten key: '{key}'.",
             )
-        stream.step()
+        line, pos = stream.step()
 
         value = read_node(stream, parser)
 
-        return key, value
+        return key, value, (line, pos)
 
     def __str__(self):
         args_repr = "[" + ", ".join([str(item) for item in self._args]) + "]"
@@ -488,8 +482,25 @@ class Args(Node):
 
     def _construct(self, constructor: nip.constructor.Constructor, always_pair=False):
         args = list(item._construct(constructor) for item in self._args)
-        kwargs = {key: value._construct(constructor) for key, value in self._kwargs.items()}
-        assert args or kwargs, "Error converting Args node."  # This should never happen
+        kwargs = {
+            key: value._construct(constructor)
+            for key, value in self._kwargs.items()
+            if key not in ["_target_", "_args_"]
+        }
+        if "_target_" in self._kwargs:
+            name = self._kwargs["_target_"]._construct(constructor)
+            if "_args_" in self._kwargs:
+                if len(args) > 0:
+                    nip.constructor.ConstructorError(
+                        self,
+                        args,
+                        kwargs,
+                        "'_args_' key and usual args cant be presented in the Node at the same time.",
+                        name=name,
+                    )
+                args = self._kwargs["_args_"]._construct(constructor)
+            return nip.constructor.construct_with_args(name, args, kwargs, constructor, self)
+        assert args or kwargs, "Error constructing Args node."  # This should never happen
         if args and kwargs or always_pair:
             return args, kwargs
         return args or kwargs
@@ -518,17 +529,19 @@ class Args(Node):
 
 
 class Iter(Node):  # mark all parents as Iterable and allow construct specific instance
-    def __init__(self, name: str = "", value: Any = None):
+    def __init__(self, name: str = "", value: Any = None, line: int = None, pos: int = None):
         super(Iter, self).__init__(name, value)
         self._return_index = -1
         # mb: name all the iterators and get the value from constructor rather then use this index
+        self._line = line
+        self._pos = pos
 
     @classmethod
     def read(cls, stream: nip.stream.Stream, parser: nip.parser.Parser) -> Union[Iter, None]:
         read_tokens = stream.peek(tokens.Operator("@"), tokens.Name) or stream.peek(tokens.Operator("@"))
         if read_tokens is None:
             return None
-        stream.step()
+        line, pos = stream.step()
         value = read_node(stream, parser)
         if isinstance(value, Value) and isinstance(value._value, list):  # mb: replace inline list with Node
             value = value._value
@@ -537,9 +550,9 @@ class Iter(Node):  # mark all parents as Iterable and allow construct specific i
         else:
             raise nip.parser.ParserError(stream, "List is expected as a value for Iterable node")
         if len(read_tokens) == 1:
-            iterator = Iter("", value)
+            iterator = Iter("", value, line=line, pos=pos)
         else:
-            iterator = Iter(read_tokens[1]._value, value)
+            iterator = Iter(read_tokens[1]._value, value, line=line, pos=pos)
 
         parser.iterators.append(iterator)
         return iterator
@@ -578,9 +591,9 @@ class InlinePython(Node):
         read_tokens = stream.peek(tokens.InlinePython)
         if read_tokens is None:
             return None
-        stream.step()
+        line, pos = stream.step()
         exec_string = read_tokens[0]._value
-        return InlinePython(value=exec_string)
+        return InlinePython(value=exec_string, line=line, pos=pos)
 
     def _construct(self, constructor: nip.constructor.Constructor):
         nsc.preload_vars(self._value, constructor)
@@ -597,12 +610,13 @@ class InlinePython(Node):
 class Nothing(Node):
     @classmethod
     def read(cls, stream: nip.stream.Stream, parser: nip.parser.Parser) -> Union[Nothing, None]:
+        line, pos = stream.line, stream.pos
         if not stream:
-            return Nothing()
+            return Nothing(line=line, pos=pos)
 
         indent = stream.pos
-        if stream.pos == 0 or (stream.lines[stream.n][: stream.pos].isspace() and indent <= parser.last_indent):
-            return Nothing()
+        if stream.pos == 0 or (stream.lines[stream.line][: stream.pos].isspace() and indent <= parser.last_indent):
+            return Nothing(line=line, pos=pos)
 
     def _construct(self, constructor: nip.constructor.Constructor):
         return self
@@ -620,13 +634,13 @@ class FString(Node):  # Includes f-string and r-string
         read_tokens = stream.peek(tokens.PythonString)
         if read_tokens is None:
             return None
-        stream.step()
+        line, pos = stream.step()
         string, t = read_tokens[0]._value
         if t == "r":
             print(
                 "Warning: all strings in NIP are already python r-string. " "You don't have to explicitly specify it."
             )
-        return FString(value=string)
+        return FString(value=string, line=line, pos=pos)
 
     def _construct(self, constructor: nip.constructor.Constructor):
         nsc.preload_vars(f"f{self._value}", constructor)
@@ -647,7 +661,7 @@ class Directive(Node):
         if read_tokens is None:
             return None
         name = read_tokens[1]._value
-        stream.step()
+        line, pos = stream.step()
 
         value = read_node(stream, parser)
 

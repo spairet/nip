@@ -47,7 +47,7 @@ class Parser:
 
 class ParserError(Exception):
     def __init__(self, stream: Stream, msg: str):
-        self.line = stream.n
+        self.line = stream.line
         self.pos = stream.pos
         self.msg = msg
 

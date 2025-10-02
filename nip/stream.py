@@ -7,7 +7,7 @@ class Stream:
     def __init__(self, sstream: str):
         self.lines = sstream.split("\n")
         self.lines = [line + " " for line in self.lines]
-        self.n = 0
+        self.line = 0
         self.pos = 0
         self.last_peak_pos = -1
         self._pass_forward()
@@ -16,7 +16,7 @@ class Stream:
         """Reads several tokens from stream"""
         if not self:
             return None
-        line = self.lines[self.n]
+        line = self.lines[self.line]
         pos = self.pos
         self.last_peak_pos = -1  # prevent step() after failed peek()
         read_tokens = []
@@ -36,14 +36,14 @@ class Stream:
                 length, token = token_type.read(line[pos:])
                 # mb: pass full stream to token. (This will allow multiline string parsing)
             except tokens.TokenError as e:
-                raise StreamError(self.n, pos, e)
+                raise StreamError(self.line, pos, e)
 
             if token is None:
                 return None
             if isinstance(arg, tokens.Token) and token != arg:
                 return None
 
-            token.set_position(self.n, pos)
+            token.set_position(self.line, pos)
             read_tokens.append(token)
             pos += length
 
@@ -52,26 +52,28 @@ class Stream:
 
     def step(self):
         assert self.last_peak_pos > 0, "step() called before peaking any Token"
+        line, pos = self.line, self.pos
         self.pos = self.last_peak_pos
         self._pass_forward()
+        return line, pos  # the point we started reading, since this log is more convenient for user
 
     def _pass_forward(self):
         while self and (
-            self.pos >= len(self.lines[self.n])
-            or self.lines[self.n][self.pos :].isspace()
-            or self.lines[self.n][self.pos :].strip()[0] == "#"
+            self.pos >= len(self.lines[self.line])
+            or self.lines[self.line][self.pos :].isspace()
+            or self.lines[self.line][self.pos :].strip()[0] == "#"
         ):
-            self.n += 1
+            self.line += 1
             self.pos = 0
 
         if not self:
             return
 
-        while self.lines[self.n][self.pos].isspace():
+        while self.lines[self.line][self.pos].isspace():
             self.pos += 1
 
     def __bool__(self):
-        return self.n < len(self.lines)
+        return self.line < len(self.lines)
 
 
 class StreamError(Exception):
