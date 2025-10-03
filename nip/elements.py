@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import re
 from abc import abstractmethod, ABC
 from pathlib import Path
 from typing import Any, Union, Tuple, Dict
@@ -28,6 +29,7 @@ class Node(ABC, object):
         self._parent = None
         self._line = line
         self._pos = pos
+        self._construction_in_progress = False
 
     @classmethod
     @abstractmethod
@@ -223,7 +225,18 @@ class Link(Node):
         return "nil"  # something that means that object is not constructed yet.
 
     def _construct(self, constructor: nip.constructor.Constructor):
-        return constructor.vars[self._name]
+        if self._construction_in_progress:
+            raise nip.non_seq_constructor.NonSequentialConstructorError(f"Recursive construction of {self._name}")
+        self._construction_in_progress = True
+        root = self._get_root()
+        if self._name in constructor:  # was constructed or can be constructed
+            value = constructor.vars[self._name]
+        elif self._name in root:
+            value = root[self._name]._construct(constructor)
+        else:
+            raise NameError(f"Variable '{self._name}' is not defined.")
+        self._construction_in_progress = False
+        return value
 
     def _dump(self, dumper: nip.dumper.Dumper):
         return f"*{self._name}"
@@ -644,6 +657,15 @@ class FString(Node):  # Includes f-string and r-string
 
     def _construct(self, constructor: nip.constructor.Constructor):
         nsc.preload_vars(f"f{self._value}", constructor)
+        items = re.findall(r"\{([\w\._]+)\}", self._value)
+        root = self._get_root()
+        namespace = nip.utils.Namespace()
+        for item in items:
+            if item in root:
+                namespace[item] = root[item]._construct(constructor)
+            elif item not in constructor.vars:
+                raise NameError(f"Unresolved reverence in fstring '{item}'")
+        locals().update(namespace.__dict__)
         locals().update(constructor.vars)
         return eval(f"f{self._value}")
 
@@ -661,7 +683,7 @@ class Directive(Node):
         if read_tokens is None:
             return None
         name = read_tokens[1]._value
-        line, pos = stream.step()
+        stream.step()
 
         value = read_node(stream, parser)
 

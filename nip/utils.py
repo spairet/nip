@@ -82,3 +82,18 @@ def check_typing(func, args, kwargs) -> List[str]:
             messages.append(f"{name}: {e}")
 
     return messages
+
+
+class Namespace:
+    def __getattr__(self, key: str) -> "Namespace":
+        item = Namespace()
+        setattr(self, key, item)
+        return item
+
+    def __setitem__(self, key, value):
+        prefix = key.split(".")[0]
+        suffix = ".".join(key.split(".")[1:])
+        if len(suffix) == 0:
+            setattr(self, prefix, value)
+        else:
+            getattr(self, prefix)[suffix] = value

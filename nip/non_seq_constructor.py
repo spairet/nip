@@ -30,6 +30,9 @@ class VarsDict:
     def __iter__(self):
         return iter(self.vars)
 
+    def __contains__(self, item):
+        return item in self.vars
+
     def items(self):
         return self.vars.items()
 
@@ -59,6 +62,9 @@ class NonSequentialConstructor(Constructor):
                 self._find_links(sub_node)
         if isinstance(node._value, nip.elements.Node):
             self._find_links(node._value)
+
+    def __contains__(self, item):
+        return (item in self.vars) or (item in self.links)
 
 
 class NonSequentialConstructorError(Exception):

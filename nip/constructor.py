@@ -46,6 +46,9 @@ class Constructor:
         self.builders.update(global_builders)
         self.builders.update(get_sub_dict(NIPBuilder))
 
+    def __contains__(self, item):
+        return item in self.vars
+
 
 class ConstructorError(Exception):
     def __init__(self, node, args, kwargs, e, name=None):
