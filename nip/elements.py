@@ -16,13 +16,12 @@ import nip.parser
 import nip.stream
 import nip.tokens as tokens
 import nip.utils
+import nip.dict
 
 _LOGGER = logging.getLogger(__name__)
 
 
 class Node(ABC, object):
-    """Base token for nip file"""
-
     def __init__(self, name: str = "", value: Any = None, line: int = None, pos: int = 0):
         self._name = name
         self._value = value
@@ -68,6 +67,12 @@ class Node(ABC, object):
 
     def to_python(self):
         return self._value.to_python()
+
+    def to_dictobject(self):
+        data = self.construct()
+        if isinstance(data, (tuple, list, dict)):
+            return nip.dict.DictObject(data)
+        return data
 
     def _construct(self, constructor: nip.constructor.Constructor):
         return self._value._construct(constructor)
@@ -417,6 +422,7 @@ class Args(Node):
             return None, None
         key = item.split(".")[0]
         if key.isnumeric():
+            # left_key = None if len(key) == len(item) else item[len(key) + 1 :]
             return item[len(key) + 1 :], self._args[int(key)]
         for key in self._kwargs:
             if item.startswith(key):
