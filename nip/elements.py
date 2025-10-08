@@ -28,7 +28,6 @@ class Node(ABC, object):
         self._parent = None
         self._line = line
         self._pos = pos
-        self._construction_in_progress = False
 
     @classmethod
     @abstractmethod
@@ -74,11 +73,12 @@ class Node(ABC, object):
             return nip.dict.DictObject(data)
         return data
 
+    @nip.constructor.construct_method
     def _construct(self, constructor: nip.constructor.Constructor):
         return self._value._construct(constructor)
 
-    def construct(self, base_config: Node = None, strict_typing: bool = False, nonsequential: bool = True):
-        return nip.construct(self, base_config=base_config, strict_typing=strict_typing, nonsequential=nonsequential)
+    def construct(self, base_config: Node = None, strict_typing: bool = False):
+        return nip.construct(self, base_config=base_config, strict_typing=strict_typing)
 
     def _dump(self, dumper: nip.dumper.Dumper):
         return self._value._dump(dumper)
@@ -167,7 +167,9 @@ class Value(Node):
     def to_python(self):
         return self._value
 
+    @nip.constructor.construct_method
     def _construct(self, constructor: nip.constructor.Constructor = None):
+        constructor[self] = self._value
         return self._value
 
     def _dump(self, dumper: nip.dumper.Dumper):
@@ -199,10 +201,10 @@ class LinkCreation(Node):
 
         return LinkCreation(name, value, line, pos)
 
+    @nip.constructor.construct_method
     def _construct(self, constructor: nip.constructor.Constructor):
-        if nsc.should_construct(self._name, constructor):
-            constructor.vars[self._name] = self._value._construct(constructor)
-        return constructor.vars[self._name]
+        constructor[self._name] = self
+        return self._value._construct(constructor)
 
     def _dump(self, dumper: nip.dumper.Dumper):
         return f"&{self._name} {self._value._dump(dumper)}"
@@ -229,18 +231,19 @@ class Link(Node):
     def to_python(self):
         return "nil"  # something that means that object is not constructed yet.
 
-    def _construct(self, constructor: nip.constructor.Constructor):
-        if self._construction_in_progress:
-            raise nip.non_seq_constructor.NonSequentialConstructorError(f"Recursive construction of {self._name}")
-        self._construction_in_progress = True
+    @nip.constructor.construct_method
+    def _construct(self, constructor: nip.non_seq_constructor.NonSequentialConstructor):
+        # if self._construction_in_progress:
+        #     raise nip.non_seq_constructor.NonSequentialConstructorError(f"Recursive construction of {self._name}")
+        # self._construction_in_progress = True
         root = self._get_root()
-        if self._name in constructor:  # was constructed or can be constructed
-            value = constructor.vars[self._name]
+        if self._name in constructor.links:  # was constructed or can be constructed
+            value = constructor[self._name]
         elif self._name in root:
             value = root[self._name]._construct(constructor)
         else:
-            raise NameError(f"Variable '{self._name}' is not defined.")
-        self._construction_in_progress = False
+            raise NameError(f"Unable to resolve link '{self._name}'.")
+        # self._construction_in_progress = False
         return value
 
     def _dump(self, dumper: nip.dumper.Dumper):
@@ -266,6 +269,7 @@ class Tag(Node):
 
         return Tag(name, value, line=line, pos=pos)
 
+    @nip.constructor.construct_method
     def _construct(self, constructor: nip.constructor.Constructor):
         if isinstance(self._value, Args):
             args, kwargs = self._value._construct(constructor, always_pair=True)
@@ -297,6 +301,7 @@ class Class(Node):
 
         return Class(name, value, line=line, pos=pos)
 
+    @nip.constructor.construct_method
     def _construct(self, constructor: nip.constructor.Constructor):
         value = self._value._construct(constructor)
         assert isinstance(value, Nothing), "Unexpected right value while constructing Class"
@@ -499,6 +504,7 @@ class Args(Node):
             return result
         return args or kwargs
 
+    @nip.constructor.construct_method
     def _construct(self, constructor: nip.constructor.Constructor, always_pair=False):
         args = list(item._construct(constructor) for item in self._args)
         kwargs = {
@@ -583,6 +589,7 @@ class Iter(Node):  # mark all parents as Iterable and allow construct specific i
             return self._value[self._return_index].to_python()
         return self._value[self._return_index]
 
+    @nip.constructor.construct_method
     def _construct(self, constructor: nip.constructor.Constructor):
         if self._return_index == -1:
             raise Exception("Iterator index was not specified by IterParser")
@@ -614,9 +621,20 @@ class InlinePython(Node):
         exec_string = read_tokens[0]._value
         return InlinePython(value=exec_string, line=line, pos=pos)
 
+    @nip.constructor.construct_method
     def _construct(self, constructor: nip.constructor.Constructor):
-        nsc.preload_vars(self._value, constructor)
-        locals().update(constructor.vars)
+        symbols, attributes_access = nip.utils.extract_symbols_from_code(self._value)
+        namespace = nip.utils.Namespace()
+        root = self._get_root()
+        for item in attributes_access:
+            if item in root:
+                namespace[item] = constructor[root[item]]  # != root[item]._construct(constructor) for Constructor
+        for symbol in symbols:
+            if symbol in constructor:
+                namespace[symbol] = constructor[symbol]
+        # mb: check we didn't find attributes. default exception is fine?
+        # but we need to do this for symbols that are not links
+        locals().update(namespace.__dict__)
         return eval(self._value)
 
     def _dump(self, dumper: nip.dumper.Dumper):
@@ -637,6 +655,7 @@ class Nothing(Node):
         if stream.pos == 0 or (stream.lines[stream.line][: stream.pos].isspace() and indent <= parser.last_indent):
             return Nothing(line=line, pos=pos)
 
+    @nip.constructor.construct_method
     def _construct(self, constructor: nip.constructor.Constructor):
         return self
 
@@ -661,18 +680,20 @@ class FString(Node):  # Includes f-string and r-string
             )
         return FString(value=string, line=line, pos=pos)
 
+    @nip.constructor.construct_method
     def _construct(self, constructor: nip.constructor.Constructor):
-        nsc.preload_vars(f"f{self._value}", constructor)
-        items = re.findall(r"\{([\w\._]+)\}", self._value)
-        root = self._get_root()
+        symbols, attributes_access = nip.utils.extract_symbols_from_code(f"f{self._value}")
         namespace = nip.utils.Namespace()
-        for item in items:
+        root = self._get_root()
+        for item in attributes_access:
             if item in root:
-                namespace[item] = root[item]._construct(constructor)
-            elif item not in constructor.vars:
-                raise NameError(f"Unresolved reverence in fstring '{item}'")
+                namespace[item] = constructor[root[item]]  # != root[item]._construct(constructor) for Constructor
+        for symbol in symbols:
+            if symbol in constructor:
+                namespace[symbol] = constructor[symbol]
+        # mb: check we didn't find attributes. default exception is fine?
+        # but we need to do this for symbols that are not links
         locals().update(namespace.__dict__)
-        locals().update(constructor.vars)
         return eval(f"f{self._value}")
 
     def _dump(self, dumper: nip.dumper.Dumper):

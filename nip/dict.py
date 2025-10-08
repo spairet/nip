@@ -1,27 +1,31 @@
+from typing import List, Any, Union
+
 from .utils import iterate_items
 
 
 class DictObject(dict):
-    def __init__(self, obj):
-        d = {}
-        if isinstance(obj, (list, dict)):
-            for key, value in iterate_items(obj):
-                d[key] = value
-                if isinstance(value, (tuple, list, dict)):
-                    d[key] = DictObject(value)
-
-        elif isinstance(obj, tuple):
-            for key, value in iterate_items(obj[0]):
-                d[key] = value
-                if isinstance(value, (tuple, list, dict)):
-                    d[key] = DictObject(value)
-            for key, value in iterate_items(obj[1]):
-                d[key] = value
-                if isinstance(value, (tuple, list, dict)):
-                    d[key] = DictObject(value)
-        else:
-            raise ValueError("Expected Iterable type for Converting to DictObject")
-        super(DictObject, self).__init__(**d)
-
     def __getattr__(self, item):
         return self[item]
+
+    @classmethod
+    def create(cls, obj):
+        return convert(obj)
+
+    def add_item(self, key, value):
+        prefix = key.split(".")[0]
+        suffix = ".".join(key.split(".")[1:])
+        if len(suffix) == 0:
+            setattr(self, prefix, value)
+        else:
+            getattr(self, prefix)[suffix] = value
+
+
+def convert(obj) -> Union[DictObject, List, Any]:
+    if isinstance(obj, (list, dict)):
+        for key, value in iterate_items(obj):
+            obj[key] = convert(value)  # so we preserve links
+    if isinstance(obj, tuple):
+        for sub_obj in obj:
+            for key, value in iterate_items(sub_obj):
+                sub_obj[key] = convert(value)
+    return obj
