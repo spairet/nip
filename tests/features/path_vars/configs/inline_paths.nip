@@ -1,0 +1,16 @@
+## add test with inline expressions like `model.parameters()`
+func:
+  _target_: utils.builders.MySecretFunction
+  a: 1
+  b: 2
+  c: `len(obj.name)`
+
+obj: &named_obj
+  _target_: utils.builders.MyClass
+  name: "pam"
+  f: [1, 2, 3]
+
+clones:
+  obj: *named_obj
+  f: *obj.f
+
