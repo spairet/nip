@@ -77,8 +77,8 @@ class Node(ABC, object):
     def _construct(self, constructor: nip.constructor.Constructor):
         return self._value._construct(constructor)
 
-    def construct(self, base_config: Node = None, strict_typing: bool = False):
-        return nip.construct(self, base_config=base_config, strict_typing=strict_typing)
+    def construct(self, strict_typing: bool = False, as_dictobj: bool = False):
+        return nip.construct(self, strict_typing=strict_typing, nonsequential=True, as_dictobj=as_dictobj)
 
     def _dump(self, dumper: nip.dumper.Dumper):
         return self._value._dump(dumper)
