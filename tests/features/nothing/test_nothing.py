@@ -4,7 +4,7 @@ from utils.test_utils import NOTHING, deep_conditioned_compare, nothing_comparis
 def test_nothing():
     from nip import load
 
-    result = load("features/nothing/configs/nothing.nip")
+    result = load("features/nothing/configs/nothing.nip", as_dictobj=False)
     expected_result = (
         [2, 213, {"qwe": [3, NOTHING, NOTHING, {"fgh": ([NOTHING], {"fgr": NOTHING})}]}, NOTHING],
         {"qwe": {"asd": {"dfg": NOTHING}}, "zxc": NOTHING, "fff": NOTHING},

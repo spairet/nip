@@ -6,6 +6,7 @@ def test_comment():
     from nip import load
 
     res = load("base_tests/comments/configs/comment.nip")
+    print(res)
     assert isinstance(res, dict)
     assert "main" in res
     assert res["main"] == {

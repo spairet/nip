@@ -73,7 +73,7 @@ def load(
     always_iter: bool = False,
     strict: bool = False,
     nonsequential: bool = True,
-    as_dictobj: bool = True,
+    as_dictobj: bool = False,
 ) -> Union[Any, Iterable[Any]]:
     """Parses config and constructs python object
     Parameters

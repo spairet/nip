@@ -528,7 +528,8 @@ class Args(Node):
         assert args or kwargs, "Error constructing Args node."  # This should never happen
         if args and kwargs or always_pair:
             return args, kwargs
-        return args or kwargs
+        # return args or kwargs
+        return args or nip.dict.DictObject(kwargs)
 
     def _dump(self, dumper: nip.dumper.Dumper):
         dumped_args = "\n".join(
