@@ -54,12 +54,10 @@ def construct(
     """
     if nonsequential or base_config is not None:
         base_config = base_config or config._get_root()
-        constructor = NonSequentialConstructor(base_config, strict_typing=strict_typing)
+        constructor = NonSequentialConstructor(base_config, strict_typing=strict_typing, as_dictobj=as_dictobj)
     else:
-        constructor = Constructor(strict_typing=strict_typing)
+        constructor = Constructor(strict_typing=strict_typing, as_dictobj=as_dictobj)
     result = constructor.construct(config)
-    if as_dictobj:
-        result = DictObject.create(result)
     return result
 
 

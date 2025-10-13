@@ -12,8 +12,9 @@ class NonSequentialConstructor(Constructor):
         ignore_rewriting=False,
         load_builders=True,
         strict_typing=False,
+        as_dictobj: bool = False,
     ):
-        super().__init__(ignore_rewriting, load_builders, strict_typing)
+        super().__init__(ignore_rewriting, load_builders, strict_typing, as_dictobj=as_dictobj)
         self.links = {}  # name -> node
         self._find_links(base_config)
         self.constructed_nodes = {}  # node -> obj  # store here because of gc

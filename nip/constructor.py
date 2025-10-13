@@ -16,7 +16,7 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class Constructor:
-    def __init__(self, ignore_rewriting=False, load_builders=True, strict_typing=False):
+    def __init__(self, ignore_rewriting=False, load_builders=True, strict_typing=False, as_dictobj: bool = False):
         self.builders = {}
         self.ignore_rewriting = ignore_rewriting
         if load_builders:
@@ -24,6 +24,7 @@ class Constructor:
         self.links = {}
         self.strict_typing = strict_typing
         self.constructed_nodes = {}
+        self.as_dictobj = as_dictobj
 
     def construct(self, element):
         return element._construct(self)
