@@ -1,0 +1,11 @@
+## add test with inline expressions like `model.parameters()`
+
+- first_dict:
+    a: 1
+    b: 2
+    c: 3
+
+- second_dict:
+    a: 4
+    b: 5
+    c: 6

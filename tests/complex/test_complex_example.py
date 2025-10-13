@@ -10,7 +10,7 @@ def test_config():
     from nip import load, nip
 
     nip(builders)
-    result_iter = load("complex/configs/config.nip")
+    result_iter = load("complex/configs/config.nip", as_dictobj=False)
     expected_result = {
         "main": {
             "first": {"in1": "11", "in2": -12.5},

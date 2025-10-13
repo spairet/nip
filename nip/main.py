@@ -8,6 +8,7 @@ from .constructor import Constructor
 from .convertor import Convertor
 from .dumper import Dumper
 from .non_seq_constructor import NonSequentialConstructor
+from .dict import DictObject
 
 __all__ = [
     "parse",
@@ -29,6 +30,7 @@ def construct(
     base_config: elements.Node = None,
     strict_typing: bool = False,
     nonsequential: bool = True,
+    as_dictobj: bool = True,
 ) -> Any:
     """Constructs python object based on config and known nip-objects
 
@@ -43,6 +45,8 @@ def construct(
     nonsequential:
         If True, allows to use links before creation.
         Always true if base_config is specified.
+    as_dictobj:
+        Whether to convert constructed value to DictObject.
 
     Returns
     -------
@@ -50,22 +54,24 @@ def construct(
     """
     if nonsequential or base_config is not None:
         base_config = base_config or config._get_root()
-        constructor = NonSequentialConstructor(base_config, strict_typing=strict_typing)
+        constructor = NonSequentialConstructor(base_config, strict_typing=strict_typing, as_dictobj=as_dictobj)
     else:
-        constructor = Constructor(strict_typing=strict_typing)
-    return constructor.construct(config)
+        constructor = Constructor(strict_typing=strict_typing, as_dictobj=as_dictobj)
+    result = constructor.construct(config)
+    return result
 
 
-def _iter_load(configs, strict_typing, nonsequential):  # Otherwise load() will always be an iterator
+def _iter_load(configs, strict_typing, nonsequential, as_dictobj):  # Otherwise load() will always be an iterator
     for config in configs:
-        yield construct(config, strict_typing=strict_typing, nonsequential=nonsequential)
+        yield construct(config, strict_typing=strict_typing, nonsequential=nonsequential, as_dictobj=as_dictobj)
 
 
 def load(
     path: Union[str, Path],
     always_iter: bool = False,
     strict: bool = False,
-    nonsequential: bool = False,
+    nonsequential: bool = True,
+    as_dictobj: bool = False,
 ) -> Union[Any, Iterable[Any]]:
     """Parses config and constructs python object
     Parameters
@@ -86,16 +92,17 @@ def load(
     config = parse(path, always_iter, strict=strict)
 
     if isinstance(config, Iterable):
-        return _iter_load(config, strict, nonsequential)
+        return _iter_load(config, strict, nonsequential, as_dictobj)
 
-    return construct(config, strict_typing=strict, nonsequential=nonsequential)
+    return construct(config, strict_typing=strict, nonsequential=nonsequential, as_dictobj=as_dictobj)
 
 
 def load_string(
     config_string: str,
     always_iter: bool = False,
     strict: bool = False,
-    nonsequential: bool = False,
+    nonsequential: bool = True,
+    as_dictobj: bool = True,
 ) -> Union[Any, Iterable[Any]]:
     """Parses config and constructs python object
     Parameters
@@ -116,9 +123,9 @@ def load_string(
     config = parse_string(config_string, always_iter, strict=strict)
 
     if isinstance(config, Iterable):
-        return _iter_load(config, strict, nonsequential)
+        return _iter_load(config, strict, nonsequential, as_dictobj)
 
-    return construct(config, strict_typing=strict, nonsequential=nonsequential)
+    return construct(config, strict_typing=strict, nonsequential=nonsequential, as_dictobj=as_dictobj)
 
 
 def dump(path: Union[str, Path], obj: Union[elements.Node, object]):

@@ -1,4 +1,5 @@
 # Constructor of tagged objects
+import functools
 import importlib
 import importlib.util
 import logging
@@ -15,13 +16,15 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class Constructor:
-    def __init__(self, ignore_rewriting=False, load_builders=True, strict_typing=False):
+    def __init__(self, ignore_rewriting=False, load_builders=True, strict_typing=False, as_dictobj: bool = False):
         self.builders = {}
         self.ignore_rewriting = ignore_rewriting
         if load_builders:
             self.load_builders()
-        self.vars = {}
+        self.links = {}
         self.strict_typing = strict_typing
+        self.constructed_nodes = {}
+        self.as_dictobj = as_dictobj
 
     def construct(self, element):
         return element._construct(self)
@@ -45,6 +48,21 @@ class Constructor:
     def load_builders(self):
         self.builders.update(global_builders)
         self.builders.update(get_sub_dict(NIPBuilder))
+
+    def __contains__(self, item):
+        if isinstance(item, str):
+            return item in self.links
+        return id(item) in self.constructed_nodes
+
+    def __getitem__(self, item):
+        if isinstance(item, str):
+            item = self.links[item]
+        return self.constructed_nodes[id(item)]
+
+    def __setitem__(self, key, value):
+        if isinstance(key, str):  # create link
+            self.links[key] = value
+        self.constructed_nodes[id(key)] = value  # constructed node
 
 
 class ConstructorError(Exception):
@@ -86,6 +104,18 @@ def construct_with_args(name, args, kwargs, constructor: Constructor, node):
         return builder(*args, **kwargs)
     except Exception as e:
         raise ConstructorError(node, args, kwargs, e, name=name)
+
+
+def construct_method(method: Callable) -> Callable:
+    @functools.wraps(method)
+    def wrapper(self, constructor, *args, **kwargs):
+        if self in constructor:
+            return constructor[self]
+        result = method(self, constructor, *args, **kwargs)
+        constructor[self] = result
+        return result
+
+    return wrapper
 
 
 # mb: add meta for auto detecting this class as NIP-builder

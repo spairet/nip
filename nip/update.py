@@ -68,7 +68,7 @@ def update(base_config: "nip.elements.Node", updating_config: "nip.elements.Node
     -----
     Any leaf Node of base_config will be overwritten by corresponding Node of updating_config.
     Any Node of updating_config that is not dict or list will overwrite corresponding Node of base_config.
-    It is not able to overwrite dict nodes atm, since they will be simply updated.
+    It is not possible to overwrite dict nodes atm, since they will be simply updated.
 
     Parameters
     ----------
