@@ -43,6 +43,8 @@ def base_directive(node, stream: Stream):  # mb: parent
         raise ParserError(stream, "!!base directive expects dict node with __base__ key.")
     base_config_path = node["_base_"].to_python()
     base_config = parse(base_config_path)
+    if isinstance(base_config, nip.elements.Document):
+        base_config = base_config._value
     del node._kwargs["_base_"]
     return update(base_config, node)
 
