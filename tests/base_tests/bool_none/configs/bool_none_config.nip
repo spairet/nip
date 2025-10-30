@@ -1,0 +1,10 @@
+this_is_none: None # comment
+also_none: none
+booleans:
+  - True
+  - true
+  - yes
+other_booleans:
+  - False
+  - false
+  - no

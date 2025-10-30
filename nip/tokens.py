@@ -79,10 +79,13 @@ class Bool(Token):
         return 0, None
 
 
-# class NoneType(Token):
-#     @staticmethod
-#     def read(stream: str) -> Tuple[int, Any]:
-#         string = stream[:strip]
+class NoneToken(Token):
+    @staticmethod
+    def read(stream: str) -> Tuple[int, Any]:
+        string = stream[: stream.find(" #")].strip()  # ignore comment
+        if string in ["None", "none"]:
+            return len(string), NoneToken(None)
+        return 0, None
 
 
 class String(Token):
