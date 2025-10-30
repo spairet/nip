@@ -46,7 +46,7 @@ def construct(
         If True, allows to use links before creation.
         Always true if base_config is specified.
     as_dictobj:
-        Whether to convert constructed value to DictObject.
+        Returns DictObj if true and possible
 
     Returns
     -------
@@ -84,6 +84,8 @@ def load(
         If True, raises Exception when typing mismatch or overwriting dict key.
     nonsequential:
         If True, allows to use links before creation.
+    as_dictobj:
+        Returns DictObj if true and possible
 
     Returns
     -------
@@ -115,6 +117,8 @@ def load_string(
         If True, raises Exception when typing mismatch or overwriting dict key.
     nonsequential:
         If True, allows to use links before creation.
+    as_dictobj:
+        Returns DictObj if true and possible
 
     Returns
     -------
@@ -202,14 +206,7 @@ def _run_return(value, config, return_values, return_configs):
 
 
 def _single_run(
-    config,
-    func,
-    verbose,
-    return_values,
-    return_configs,
-    config_parameter,
-    strict,
-    nonsequential,
+    config, func, verbose, return_values, return_configs, config_parameter, strict, nonsequential, as_dictobj
 ):
     if verbose:
         print("=" * 20)
@@ -217,7 +214,7 @@ def _single_run(
         print(dump_string(config))
         print("----")
 
-    value = construct(config, strict, nonsequential)
+    value = construct(config, strict_typing=strict, nonsequential=nonsequential, as_dictobj=as_dictobj)
     if func is not None:
         if isinstance(value, tuple) and isinstance(value[0], list) and isinstance(value[1], dict):
             args, kwargs = value
@@ -247,25 +244,11 @@ def _single_run(
 
 
 def _iter_run(
-    configs,
-    func,
-    verbose,
-    return_values,
-    return_configs,
-    config_parameter,
-    strict,
-    nonsequential,
+    configs, func, verbose, return_values, return_configs, config_parameter, strict, nonsequential, as_dictobj
 ):
     for config in configs:
         run_return = _single_run(
-            config,
-            func,
-            verbose,
-            return_values,
-            return_configs,
-            config_parameter,
-            strict,
-            nonsequential,
+            config, func, verbose, return_values, return_configs, config_parameter, strict, nonsequential, as_dictobj
         )
         if run_return:
             yield run_return
@@ -281,6 +264,7 @@ def run(
     return_configs: bool = False,
     always_iter: bool = False,
     config_parameter: Optional[str] = None,
+    as_dictobj: bool = False,
 ):
     """Runs config. Config should be declared with function to run as a tag for the Document.
     In case of iterable configs we will iterate over and run each of them.
@@ -307,6 +291,8 @@ def run(
     config_parameter: str, optional
         If specified, parsed config will be passed to called function as a parameter with this name.
         `func` parameter must be specified.
+    as_dictobj:
+        Returns DictObj if true and possible
 
     Returns
     -------
@@ -321,24 +307,26 @@ def run(
     if isinstance(config, Iterable):
         return list(
             _iter_run(
-                config,
-                func,
-                verbose,
-                return_values,
-                return_configs,
-                config_parameter,
-                strict,
-                nonsequential,
+                configs=config,
+                func=func,
+                verbose=verbose,
+                return_values=return_values,
+                return_configs=return_configs,
+                config_parameter=config_parameter,
+                strict=strict,
+                nonsequential=nonsequential,
+                as_dictobj=as_dictobj,
             )
         )  # mb iter?
 
     return _single_run(
-        config,
-        func,
-        verbose,
-        return_values,
-        return_configs,
-        config_parameter,
-        strict,
-        nonsequential,
+        config=config,
+        func=func,
+        verbose=verbose,
+        return_values=return_values,
+        return_configs=return_configs,
+        config_parameter=config_parameter,
+        strict=strict,
+        nonsequential=nonsequential,
+        as_dictobj=as_dictobj,
     )
