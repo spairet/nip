@@ -40,9 +40,7 @@ class Tag(Node):
                 args, kwargs = [], {}
             else:
                 args, kwargs = [value], {}
-        return nip.constructor.construct_with_args(
-            self._name, args, kwargs, constructor, self
-        )
+        return nip.constructor.construct_with_args(self._name, args, kwargs, constructor, self)
 
     def _dump(self, dumper: Dumper):
         return f"!{self._name} " + self._value._dump(dumper)
@@ -59,18 +57,14 @@ class Class(Node):
 
         value = read_node(stream, parser)
         if not isinstance(value, Nothing):
-            raise nip.parser.ParserError(
-                stream, "Class should be created with nothing to the right."
-            )
+            raise nip.parser.ParserError(stream, "Class should be created with nothing to the right.")
 
         return Class(name, value, line=line, pos=pos)
 
     @nip.constructor.construct_method
     def _construct(self, constructor: Constructor):
         value = self._value._construct(constructor)
-        assert isinstance(
-            value, Nothing
-        ), "Unexpected right value while constructing Class"
+        assert isinstance(value, Nothing), "Unexpected right value while constructing Class"
         return constructor.builders[self._name]
 
     def _dump(self, dumper: Dumper):

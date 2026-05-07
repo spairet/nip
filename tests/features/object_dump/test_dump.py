@@ -21,14 +21,8 @@ def test_complex(tmp_path):
     dump(str(dump_path), big_obj)
     result = load(str(dump_path))
     assert result.data == {"dict": "with", "some": "data", "number": 42}
-    assert (
-        isinstance(result.childs[0], SmallButValuableClass)
-        and result.childs[0].just_name == "Popo"
-    )
-    assert (
-        isinstance(result.childs[1], SmallButValuableClass)
-        and result.childs[1].just_name == "Pepe"
-    )
+    assert isinstance(result.childs[0], SmallButValuableClass) and result.childs[0].just_name == "Popo"
+    assert isinstance(result.childs[1], SmallButValuableClass) and result.childs[1].just_name == "Pepe"
 
 
 def test_no_default_dumper(tmp_path):

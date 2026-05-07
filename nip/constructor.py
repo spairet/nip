@@ -4,10 +4,10 @@ import importlib
 import importlib.util
 import logging
 import pydoc
-from types import FunctionType, ModuleType, BuiltinFunctionType
+from types import BuiltinFunctionType, FunctionType, ModuleType
 from typing import Callable, Optional, Union
 
-from .utils import get_sub_dict, check_typing
+from .utils import check_typing, get_sub_dict
 
 global_builders = {}  # builders shared between Constructors
 global_calls = {}  # history of object creations
@@ -48,9 +48,7 @@ class Constructor:
         """
         if tag is None:
             tag = func.__name__
-        assert (
-            self.ignore_rewriting or tag not in self.builders
-        ), f"Builder for tag '{tag}' already registered"
+        assert self.ignore_rewriting or tag not in self.builders, f"Builder for tag '{tag}' already registered"
         self.builders[tag] = func
 
     def load_builders(self):
@@ -110,9 +108,7 @@ def construct_with_args(name, args, kwargs, constructor: Constructor, node):
         if constructor.strict_typing:
             raise ConstructorError(node, args, kwargs, "\n".join(messages), name=name)
         else:
-            _LOGGER.warning(
-                f"Typing mismatch while constructing {name}:\n" + "\n".join(messages)
-            )
+            _LOGGER.warning(f"Typing mismatch while constructing {name}:\n" + "\n".join(messages))
 
     try:  # Try to construct
         return builder(*args, **kwargs)
@@ -189,11 +185,7 @@ def wrap_module(module: Union[str, ModuleType], wrap_builtins=False, convertable
         module = importlib.import_module(module)
 
     for value in module.__dict__.values():
-        if (
-            isinstance(value, (type, FunctionType))
-            or wrap_builtins
-            and isinstance(value, BuiltinFunctionType)
-        ):
+        if isinstance(value, (type, FunctionType)) or wrap_builtins and isinstance(value, BuiltinFunctionType):
             nip(value, convertable=convertable and isinstance(value, type))
 
     return module

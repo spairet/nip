@@ -13,9 +13,7 @@ class NonSequentialConstructor(Constructor):
         strict_typing=False,
         as_dictobj: bool = False,
     ):
-        super().__init__(
-            ignore_rewriting, load_builders, strict_typing, as_dictobj=as_dictobj
-        )
+        super().__init__(ignore_rewriting, load_builders, strict_typing, as_dictobj=as_dictobj)
         self.links = {}  # name -> node
         self._find_links(base_config)
         self.constructed_nodes = {}  # node -> obj  # store here because of gc
@@ -46,9 +44,7 @@ class NonSequentialConstructor(Constructor):
     def __getitem__(self, item):
         if isinstance(item, str):
             if item not in self.links:
-                raise NonSequentialConstructorError(
-                    f"Unresolved reference '{item}'"
-                )  # mb: link, ref or var
+                raise NonSequentialConstructorError(f"Unresolved reference '{item}'")  # mb: link, ref or var
             item = self.links[item]
         assert isinstance(item, nip.elements.Node)
         if id(item) in self.in_progress:

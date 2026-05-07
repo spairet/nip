@@ -35,10 +35,7 @@ def update_flatten(
         )  # mb: add IterableConfig, instead of handling this by Parser.
     if isinstance(updating_config, nip.elements.Document):
         updating_config = updating_config._value
-    if (
-        not isinstance(updating_config, nip.elements.Args)
-        or not updating_config._is_dict()
-    ):
+    if not isinstance(updating_config, nip.elements.Args) or not updating_config._is_dict():
         raise TypeError("Flatten updating config should be just a dict.")
     for key, value in updating_config:
         base_config[key] = value
@@ -70,9 +67,7 @@ def _update(base_config: "nip.elements.Node", updating_config: "nip.elements.Nod
     return base_config
 
 
-def update(
-    base_config: "nip.elements.Node", updating_config: "nip.elements.Node"
-) -> "nip.elements.Node":  # mb: merge
+def update(base_config: "nip.elements.Node", updating_config: "nip.elements.Node") -> "nip.elements.Node":  # mb: merge
     """Updates base_config with other_config recursively traversing both trees. Inplace.
 
     Notes

@@ -11,9 +11,7 @@ class IterParser:  # mb: insert this functionality into Parser (save parsed tree
         self.iterators = parser.iterators
         self.element = element
 
-    def iter_configs(
-        self, element: "nip.elements.Node"
-    ) -> Iterable["nip.elements.Node"]:
+    def iter_configs(self, element: "nip.elements.Node") -> Iterable["nip.elements.Node"]:
         iter_groups = defaultdict(list)
         for i, iterator in enumerate(self.iterators):
             name = iterator._name if iterator._name else f"_{i}"
@@ -22,9 +20,7 @@ class IterParser:  # mb: insert this functionality into Parser (save parsed tree
             iter_len = len(group[0]._value)
             for iterator in group:
                 if len(iterator._value) != iter_len:
-                    raise IterParserError(
-                        f"Iterators of group '{group_name}' have different lengths"
-                    )
+                    raise IterParserError(f"Iterators of group '{group_name}' have different lengths")
 
         group_names = sorted(iter_groups.keys())
         group_lengths = [len(iter_groups[name][0]._value) for name in group_names]
@@ -38,9 +34,7 @@ class IterParser:  # mb: insert this functionality into Parser (save parsed tree
 
     def __iter__(self):
         if self.element is None:
-            raise IterParserError(
-                "config element to iterate through was not defined in __init__"
-            )
+            raise IterParserError("config element to iterate through was not defined in __init__")
         return self.iter_configs(self.element)
 
 

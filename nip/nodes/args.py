@@ -66,9 +66,7 @@ class Args(Node):
         return Args(args, kwargs, "args", line=pos[0], pos=pos[1])
 
     @classmethod
-    def _read_list_item(
-        cls, stream: Stream, parser: Parser
-    ) -> Union[Tuple[Node, Tuple[int, int]], Tuple[None, None]]:
+    def _read_list_item(cls, stream: Stream, parser: Parser) -> Union[Tuple[Node, Tuple[int, int]], Tuple[None, None]]:
         read_tokens = stream.peek(tokens.Operator("- "))
         if read_tokens is None:
             return None, None
@@ -96,11 +94,7 @@ class Args(Node):
 
     def __str__(self):
         args_repr = "[" + ", ".join([str(item) for item in self._args]) + "]"
-        kwargs_repr = (
-            "{"
-            + ", ".join([f"{key}: {str(value)}" for key, value in self._kwargs.items()])
-            + "}"
-        )
+        kwargs_repr = "{" + ", ".join([f"{key}: {str(value)}" for key, value in self._kwargs.items()]) + "}"
         return f"{self.__class__.__name__}('{self._name}', {args_repr}, {kwargs_repr})"
 
     def __bool__(self):
@@ -117,9 +111,7 @@ class Args(Node):
 
     def _get_sub_item(self, item):
         if not isinstance(item, (str, int)):
-            raise TypeError(
-                f"Unexpected item type: {type(item)}. str or int are expected."
-            )
+            raise TypeError(f"Unexpected item type: {type(item)}. str or int are expected.")
 
         if isinstance(item, int) or item.isnumeric():
             item = int(item)
@@ -146,9 +138,7 @@ class Args(Node):
             elif key == len(self._args):
                 self._args.append(value)
             else:
-                raise KeyError(
-                    "You may only update existing arg of the Node or add one using `len(args)` as index"
-                )
+                raise KeyError("You may only update existing arg of the Node or add one using `len(args)` as index")
         else:
             self._kwargs[key] = value
 
@@ -228,29 +218,21 @@ class Args(Node):
                         name=name,
                     )
                 args = self._kwargs["_args_"]._construct(constructor)
-            return nip.constructor.construct_with_args(
-                name, args, kwargs, constructor, self
-            )
+            return nip.constructor.construct_with_args(name, args, kwargs, constructor, self)
         assert args or kwargs, "Error constructing Args node."
         if args and kwargs or always_pair:
             return args, kwargs
-        return args or (
-            nip.dict.DictObject(kwargs) if constructor.as_dictobj else kwargs
-        )
+        return args or (nip.dict.DictObject(kwargs) if constructor.as_dictobj else kwargs)
 
     def _dump(self, dumper: Dumper):
         dumped_args = "\n".join(
-            [
-                " " * dumper.indent + f"- {item._dump(dumper + dumper.default_shift)}"
-                for item in self._args
-            ]
+            [" " * dumper.indent + f"- {item._dump(dumper + dumper.default_shift)}" for item in self._args]
         )
         string = ("\n" if dumped_args else "") + dumped_args
 
         dumped_kwargs = "\n".join(
             [
-                " " * dumper.indent
-                + f"{key}: {value._dump(dumper + dumper.default_shift)}"
+                " " * dumper.indent + f"{key}: {value._dump(dumper + dumper.default_shift)}"
                 for key, value in self._kwargs.items()
             ]
         )

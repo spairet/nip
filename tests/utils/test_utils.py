@@ -18,9 +18,7 @@ def nothing_comparison(first, second):
     return IS_NOTHING(first) and IS_NOTHING(second)
 
 
-def deep_conditioned_compare(
-    first: object, second: object, conditions: List[Callable] = ()
-):
+def deep_conditioned_compare(first: object, second: object, conditions: List[Callable] = ()):
     if not (isinstance(second, first.__class__) or isinstance(first, second.__class__)):
         return False
     if isinstance(first, (list, tuple)) and isinstance(second, (list, tuple)):

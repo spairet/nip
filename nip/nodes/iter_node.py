@@ -17,9 +17,7 @@ if TYPE_CHECKING:
 
 
 class Iter(Node):
-    def __init__(
-        self, name: str = "", value: Any = None, line: int = None, pos: int = None
-    ):
+    def __init__(self, name: str = "", value: Any = None, line: int = None, pos: int = None):
         super(Iter, self).__init__(name, value)
         self._return_index = -1
         self._line = line
@@ -29,9 +27,7 @@ class Iter(Node):
     def read(cls, stream: Stream, parser: Parser):
         from .args import Args
 
-        read_tokens = stream.peek(tokens.Operator("@"), tokens.Name) or stream.peek(
-            tokens.Operator("@")
-        )
+        read_tokens = stream.peek(tokens.Operator("@"), tokens.Name) or stream.peek(tokens.Operator("@"))
         if read_tokens is None:
             return None
         line, pos = stream.step()
@@ -41,9 +37,7 @@ class Iter(Node):
         elif isinstance(value, Args) and value._is_list():
             value = value
         else:
-            raise nip.parser.ParserError(
-                stream, "List is expected as a value for Iterable node"
-            )
+            raise nip.parser.ParserError(stream, "List is expected as a value for Iterable node")
         if len(read_tokens) == 1:
             iterator = Iter("", value, line=line, pos=pos)
         else:
@@ -70,22 +64,16 @@ class Iter(Node):
         elif isinstance(self._value, Args):
             return self._value[self._return_index]._construct(constructor)
         else:
-            raise nip.constructor.ConstructorError(
-                self, (), {}, "Unexpected iter value type"
-            )
+            raise nip.constructor.ConstructorError(self, (), {}, "Unexpected iter value type")
 
     def _dump(self, dumper: Dumper):
         from .args import Args
 
         if self._return_index == -1:
-            raise nip.dumper.DumpError(
-                "Dumping an iterator but index was not specified by IterParser"
-            )
+            raise nip.dumper.DumpError("Dumping an iterator but index was not specified by IterParser")
         if isinstance(self._value, list):
             return str(self._value[self._return_index])
         elif isinstance(self._value, Args):
             return self._value[self._return_index]._dump(dumper)
         else:
-            raise nip.dumper.DumpError(
-                "Unable to dump Iterable node: unexpected value type"
-            )
+            raise nip.dumper.DumpError("Unable to dump Iterable node: unexpected value type")

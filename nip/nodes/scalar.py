@@ -30,9 +30,7 @@ class Value(Node):
             read_tokens = stream.peek(token)
             if read_tokens is not None:
                 line, pos = stream.step()
-                return Value(
-                    read_tokens[0]._name, read_tokens[0]._value, line=line, pos=pos
-                )
+                return Value(read_tokens[0]._name, read_tokens[0]._value, line=line, pos=pos)
         return None
 
     def to_python(self):
@@ -91,10 +89,7 @@ class Nothing(Node):
             return Nothing(line=line, pos=pos)
 
         indent = stream.pos
-        if stream.pos == 0 or (
-            stream.lines[stream.line][: stream.pos].isspace()
-            and indent <= parser.last_indent
-        ):
+        if stream.pos == 0 or (stream.lines[stream.line][: stream.pos].isspace() and indent <= parser.last_indent):
             return Nothing(line=line, pos=pos)
 
     @nip.constructor.construct_method
@@ -117,16 +112,12 @@ class FString(Node):
         line, pos = stream.step()
         string, token_type = read_tokens[0]._value
         if token_type == "r":
-            print(
-                "Warning: all strings in NIP are already python r-string. You don't have to explicitly specify it."
-            )
+            print("Warning: all strings in NIP are already python r-string. You don't have to explicitly specify it.")
         return FString(value=string, line=line, pos=pos)
 
     @nip.constructor.construct_method
     def _construct(self, constructor: Constructor):
-        symbols, attributes_access = nip.utils.extract_symbols_from_code(
-            f"f{self._value}"
-        )
+        symbols, attributes_access = nip.utils.extract_symbols_from_code(f"f{self._value}")
         namespace = nip.utils.Namespace()
         root = self._get_root()
         for item in attributes_access:

@@ -14,9 +14,7 @@ if TYPE_CHECKING:
 
 
 class Node(ABC, object):
-    def __init__(
-        self, name: str = "", value: Any = None, line: int = None, pos: int = 0
-    ):
+    def __init__(self, name: str = "", value: Any = None, line: int = None, pos: int = 0):
         self._name = name
         self._value = value
         self._parent = None
@@ -33,9 +31,7 @@ class Node(ABC, object):
 
     def __getitem__(self, item):
         if not isinstance(item, (str, int)):
-            raise TypeError(
-                f"Unexpected item type: {type(item)}. str or int are expected."
-            )
+            raise TypeError(f"Unexpected item type: {type(item)}. str or int are expected.")
         if isinstance(item, str) and len(item) == 0:
             return self
         if self._value is None:
@@ -74,9 +70,7 @@ class Node(ABC, object):
         return self._value._construct(constructor)
 
     def construct(self, strict_typing: bool = False, as_dictobj: bool = False):
-        return nip.construct(
-            self, strict_typing=strict_typing, nonsequential=True, as_dictobj=as_dictobj
-        )
+        return nip.construct(self, strict_typing=strict_typing, nonsequential=True, as_dictobj=as_dictobj)
 
     def _dump(self, dumper: Dumper):
         return self._value._dump(dumper)

@@ -35,9 +35,7 @@ class Document(Node):
 
     @classmethod
     def _read_name(cls, stream: Stream):
-        read_tokens = stream.peek(tokens.Operator("---"), tokens.Name) or stream.peek(
-            tokens.Operator("---")
-        )
+        read_tokens = stream.peek(tokens.Operator("---"), tokens.Name) or stream.peek(tokens.Operator("---"))
         if read_tokens is not None:
             stream.step()
             if len(read_tokens) == 2:
