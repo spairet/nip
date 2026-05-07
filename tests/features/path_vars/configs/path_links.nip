@@ -1,0 +1,12 @@
+main:
+  - some
+  - 123
+  - items:
+      - 4
+      - 5
+      - *other_main.ll
+      - 7
+
+other_main:
+  hmm: *main.2.items
+  ll: 6

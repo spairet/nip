@@ -37,7 +37,7 @@ def test_strict_names():
     from nip import load
 
     with pytest.raises(
-        ParserError, match="4:3: Dict key overwriting is forbidden " "in `strict` mode. Overwritten key: 'some_name'."
+        ParserError, match="4:3: Dict key overwriting is forbidden in `strict` mode. Overwritten key: 'some_name'."
     ):
         load("features/strict/configs/double_names.nip", strict=True)
 

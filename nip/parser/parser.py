@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import Union
 
 import nip.elements as elements
-from .stream import Stream
+from nip.stream import Stream
 
 
 class Parser:
@@ -47,7 +47,7 @@ class Parser:
 
 class ParserError(Exception):
     def __init__(self, stream: Stream, msg: str):
-        self.line = stream.n
+        self.line = stream.line
         self.pos = stream.pos
         self.msg = msg
 

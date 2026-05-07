@@ -1,0 +1,6 @@
+some:
+  inserted_node: !!base
+    _base_: features/update/configs/basic_config.nip
+    params:
+      first: 2
+      second: "three"

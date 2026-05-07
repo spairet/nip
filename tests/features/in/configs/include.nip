@@ -1,0 +1,9 @@
+some_parameter: &a
+  deep_param: 123
+
+complex_node:
+  - first
+  - second
+  third: 321
+
+other_param: *a  # does not work atm

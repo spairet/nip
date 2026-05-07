@@ -2,16 +2,16 @@ from collections import defaultdict
 from itertools import product
 from typing import Iterable
 
-from .elements import Node
-from .parser import Parser
+import nip.elements
+from nip.parser.parser import Parser
 
 
 class IterParser:  # mb: insert this functionality into Parser (save parsed tree in Parser)
-    def __init__(self, parser: Parser, element: Node = None):
+    def __init__(self, parser: Parser, element: "nip.elements.Node" = None):
         self.iterators = parser.iterators
         self.element = element
 
-    def iter_configs(self, element: Node) -> Iterable[Node]:
+    def iter_configs(self, element: "nip.elements.Node") -> Iterable["nip.elements.Node"]:
         iter_groups = defaultdict(list)
         for i, iterator in enumerate(self.iterators):
             name = iterator._name if iterator._name else f"_{i}"

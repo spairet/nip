@@ -16,7 +16,7 @@ def nothing_comparison(first, second):
 
 
 def deep_conditioned_compare(first: object, second: object, conditions: List[Callable] = ()):
-    if first.__class__ != second.__class__:  # mb: let them be subclasses of one super class
+    if not (isinstance(second, first.__class__) or isinstance(first, second.__class__)):
         return False
     if isinstance(first, (list, tuple)) and isinstance(second, (list, tuple)):
         if len(first) != len(second):

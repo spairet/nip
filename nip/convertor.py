@@ -24,18 +24,18 @@ class Convertor:
         if isinstance(obj, ArgsKwargs):
             args = [self.convert(value) for value in obj.args]
             kwargs = {key: self.convert(value) for key, value in obj.kwargs.items()}
-            return Args("args", (args, kwargs))
+            return Args(args=args, kwargs=kwargs)
 
         if isinstance(obj, dict):
             kwargs = {}
             for key, value in obj.items():
                 kwargs[key] = self.convert(value)
-            return Args("args", ([], kwargs))
+            return Args(args=[], kwargs=kwargs)
 
         if isinstance(obj, (list, tuple)):
-            return Args("args", ([self.convert(value) for value in obj], {}))
+            return Args(args=[self.convert(value) for value in obj], kwargs={})
 
-        if isinstance(obj, (int, float, str, bool)):
+        if isinstance(obj, (int, float, str, bool, type(None))):
             return Value("value", obj)
 
         raise ConvertorError(obj, "No convertor specified for this class")

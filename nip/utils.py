@@ -1,3 +1,4 @@
+import ast
 import inspect
 from typing import List, Dict, Union, Any
 
@@ -80,3 +81,60 @@ def check_typing(func, args, kwargs) -> List[str]:
             messages.append(f"{name}: {e}")
 
     return messages
+
+
+class Namespace:
+    def __getattr__(self, key: str) -> "Namespace":
+        item = Namespace()
+        setattr(self, key, item)
+        return item
+
+    def __setitem__(self, key, value):
+        prefix = key.split(".")[0]
+        suffix = ".".join(key.split(".")[1:])
+        if len(suffix) == 0:
+            setattr(self, prefix, value)
+        else:
+            getattr(self, prefix)[suffix] = value
+
+
+class SymbolExtractor(ast.NodeVisitor):
+    def __init__(self):
+        self.symbols = set()
+        self.attribute_accesses = set()
+
+    def visit_Name(self, node):
+        """Extract variable names"""
+        if isinstance(node.ctx, ast.Load):  # Only interested in reads, not assignments
+            self.symbols.add(node.id)
+        self.generic_visit(node)
+
+    def visit_Attribute(self, node):
+        """Extract attribute accesses like model.backbone.name"""
+        if isinstance(node.ctx, ast.Load):  # Only interested in reads
+            # Build the full attribute chain
+            parts = []
+            current = node
+            while isinstance(current, ast.Attribute):
+                parts.append(current.attr)
+                current = current.value
+            if isinstance(current, ast.Name):
+                parts.append(current.id)
+                full_path = ".".join(reversed(parts))
+                self.attribute_accesses.add(full_path)
+        self.generic_visit(node)
+
+
+def extract_symbols_from_code(code_string: str):
+    """
+    Extract all symbols and attribute accesses from Python code.
+    Returns: (simple_symbols, attribute_chains)
+    """
+    try:
+        tree = ast.parse(code_string)
+        extractor = SymbolExtractor()
+        extractor.visit(tree)
+        return extractor.symbols, extractor.attribute_accesses
+    except SyntaxError as e:
+        print(f"Syntax error in code: {e}")
+        return set(), set()

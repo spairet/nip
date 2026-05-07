@@ -79,10 +79,13 @@ class Bool(Token):
         return 0, None
 
 
-# class NoneType(Token):
-#     @staticmethod
-#     def read(stream: str) -> Tuple[int, Any]:
-#         string = stream[:strip]
+class NoneToken(Token):
+    @staticmethod
+    def read(stream: str) -> Tuple[int, Any]:
+        string = stream[: stream.find(" #")].strip()  # ignore comment
+        if string in ["None", "none"]:
+            return len(string), NoneToken(None)
+        return 0, None
 
 
 class String(Token):
@@ -117,7 +120,7 @@ class Name(String):
     @staticmethod
     def read(stream: str) -> Tuple[int, Union[None, Name]]:
         pos = 0
-        if not stream[pos].isalpha():
+        if not (stream[pos] == "_" or stream[pos].isalpha()):  # mb: allow numeric names
             return 0, None
 
         while pos < len(stream) and (stream[pos].isalnum() or stream[pos] == "_" or stream[pos] == "."):

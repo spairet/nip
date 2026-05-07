@@ -1,13 +1,15 @@
 from pathlib import Path
-from typing import Union, Any, Iterable, Callable, Optional
+from typing import Any, Callable, Iterable, Optional, Union
+
+from nip.parser.parse_func import parse, parse_string
+from nip.update import update, update_flatten
 
 from . import elements
 from .constructor import Constructor
 from .convertor import Convertor
+from .dict import DictObject
 from .dumper import Dumper
-from .iter_parser import IterParser
 from .non_seq_constructor import NonSequentialConstructor
-from .parser import Parser
 
 __all__ = [
     "parse",
@@ -19,67 +21,9 @@ __all__ = [
     "dump",
     "dump_string",
     "convert",
+    "update",
+    "update_flatten",
 ]
-
-
-def parse(
-    path: Union[str, Path],
-    always_iter: bool = False,
-    implicit_fstrings: bool = True,
-    strict: bool = False,
-) -> Union[elements.Node, Iterable[elements.Node]]:
-    """Parses config providing Element tree
-
-    Parameters
-    ----------
-    path: str or Path
-        path to config file
-    always_iter: bool
-        If True will always return iterator over configs.
-    implicit_fstrings: boot, default: True
-        If True, all quoted strings will be treated as python f-strings.
-    strict:
-        It True, checks overwriting dict keys and positioning (`args` before `kwargs`).
-
-    Returns
-    -------
-    tree: Element or Iterable[Element]
-    """
-    parser = Parser(implicit_fstrings=implicit_fstrings, strict=strict)
-    tree = parser.parse(path)
-    if parser.has_iterators() or always_iter:
-        return IterParser(parser).iter_configs(tree)
-    return tree
-
-
-def parse_string(
-    config_string: str,
-    always_iter: bool = False,
-    implicit_fstrings: bool = True,
-    strict: bool = False,
-) -> Union[elements.Node, Iterable[elements.Node]]:
-    """Parses config providing Element tree
-
-    Parameters
-    ----------
-    config_string: str
-        Config as a string.
-    always_iter: bool
-        If True will always return iterator over configs.
-    implicit_fstrings: boot, default: True
-        If True, all quoted strings will be treated as python f-strings.
-    strict:
-        It True, checks overwriting dict keys and positioning (`args` before `kwargs`).
-
-    Returns
-    -------
-    tree: Element or Iterable[Element]
-    """
-    parser = Parser(implicit_fstrings=implicit_fstrings, strict=strict)
-    tree = parser.parse_string(config_string)
-    if parser.has_iterators() or always_iter:
-        return IterParser(parser).iter_configs(tree)
-    return tree
 
 
 def construct(
@@ -87,6 +31,7 @@ def construct(
     base_config: elements.Node = None,
     strict_typing: bool = False,
     nonsequential: bool = True,
+    as_dictobj: bool = True,
 ) -> Any:
     """Constructs python object based on config and known nip-objects
 
@@ -101,6 +46,8 @@ def construct(
     nonsequential:
         If True, allows to use links before creation.
         Always true if base_config is specified.
+    as_dictobj:
+        Returns DictObj if true and possible
 
     Returns
     -------
@@ -108,15 +55,16 @@ def construct(
     """
     if nonsequential or base_config is not None:
         base_config = base_config or config._get_root()
-        constructor = NonSequentialConstructor(base_config, strict_typing=strict_typing)
+        constructor = NonSequentialConstructor(base_config, strict_typing=strict_typing, as_dictobj=as_dictobj)
     else:
-        constructor = Constructor(strict_typing=strict_typing)
-    return constructor.construct(config)
+        constructor = Constructor(strict_typing=strict_typing, as_dictobj=as_dictobj)
+    result = constructor.construct(config)
+    return result
 
 
-def _iter_load(configs, strict_typing, nonsequential):  # Otherwise load() will always be an iterator
+def _iter_load(configs, strict_typing, nonsequential, as_dictobj):  # Otherwise load() will always be an iterator
     for config in configs:
-        yield construct(config, strict_typing=strict_typing, nonsequential=nonsequential)
+        yield construct(config, strict_typing=strict_typing, nonsequential=nonsequential, as_dictobj=as_dictobj)
 
 
 def load(
@@ -124,6 +72,7 @@ def load(
     always_iter: bool = False,
     strict: bool = False,
     nonsequential: bool = True,
+    as_dictobj: bool = False,
 ) -> Union[Any, Iterable[Any]]:
     """Parses config and constructs python object
     Parameters
@@ -136,6 +85,8 @@ def load(
         If True, raises Exception when typing mismatch or overwriting dict key.
     nonsequential:
         If True, allows to use links before creation.
+    as_dictobj:
+        Returns DictObj if true and possible
 
     Returns
     -------
@@ -144,16 +95,17 @@ def load(
     config = parse(path, always_iter, strict=strict)
 
     if isinstance(config, Iterable):
-        return _iter_load(config, strict, nonsequential)
+        return _iter_load(config, strict, nonsequential, as_dictobj)
 
-    return construct(config, strict_typing=strict, nonsequential=nonsequential)
+    return construct(config, strict_typing=strict, nonsequential=nonsequential, as_dictobj=as_dictobj)
 
 
 def load_string(
     config_string: str,
     always_iter: bool = False,
     strict: bool = False,
-    nonsequential: bool = False,
+    nonsequential: bool = True,
+    as_dictobj: bool = True,
 ) -> Union[Any, Iterable[Any]]:
     """Parses config and constructs python object
     Parameters
@@ -166,6 +118,8 @@ def load_string(
         If True, raises Exception when typing mismatch or overwriting dict key.
     nonsequential:
         If True, allows to use links before creation.
+    as_dictobj:
+        Returns DictObj if true and possible
 
     Returns
     -------
@@ -174,9 +128,9 @@ def load_string(
     config = parse_string(config_string, always_iter, strict=strict)
 
     if isinstance(config, Iterable):
-        return _iter_load(config, strict, nonsequential)
+        return _iter_load(config, strict, nonsequential, as_dictobj)
 
-    return construct(config, strict_typing=strict, nonsequential=nonsequential)
+    return construct(config, strict_typing=strict, nonsequential=nonsequential, as_dictobj=as_dictobj)
 
 
 def dump(path: Union[str, Path], obj: Union[elements.Node, object]):
@@ -190,8 +144,7 @@ def dump(path: Union[str, Path], obj: Union[elements.Node, object]):
         Read or generated config if Element. In case of any other object `convert` will be called.
     """
     if not isinstance(obj, elements.Node):
-        obj = convert(obj)
-        # mb: wrap with Document to ensure getting `---` at the beginning of the file.
+        obj = convert(obj)  # mb: wrap with Document to ensure getting `---` at the beginning of the file.
     dumper = Dumper()
     dumper.dump(path, obj)
 
@@ -254,14 +207,7 @@ def _run_return(value, config, return_values, return_configs):
 
 
 def _single_run(
-    config,
-    func,
-    verbose,
-    return_values,
-    return_configs,
-    config_parameter,
-    strict,
-    nonsequential,
+    config, func, verbose, return_values, return_configs, config_parameter, strict, nonsequential, as_dictobj
 ):
     if verbose:
         print("=" * 20)
@@ -269,7 +215,7 @@ def _single_run(
         print(dump_string(config))
         print("----")
 
-    value = construct(config, strict, nonsequential)
+    value = construct(config, strict_typing=strict, nonsequential=nonsequential, as_dictobj=as_dictobj)
     if func is not None:
         if isinstance(value, tuple) and isinstance(value[0], list) and isinstance(value[1], dict):
             args, kwargs = value
@@ -299,25 +245,11 @@ def _single_run(
 
 
 def _iter_run(
-    configs,
-    func,
-    verbose,
-    return_values,
-    return_configs,
-    config_parameter,
-    strict,
-    nonsequential,
+    configs, func, verbose, return_values, return_configs, config_parameter, strict, nonsequential, as_dictobj
 ):
     for config in configs:
         run_return = _single_run(
-            config,
-            func,
-            verbose,
-            return_values,
-            return_configs,
-            config_parameter,
-            strict,
-            nonsequential,
+            config, func, verbose, return_values, return_configs, config_parameter, strict, nonsequential, as_dictobj
         )
         if run_return:
             yield run_return
@@ -333,6 +265,7 @@ def run(
     return_configs: bool = False,
     always_iter: bool = False,
     config_parameter: Optional[str] = None,
+    as_dictobj: bool = False,
 ):
     """Runs config. Config should be declared with function to run as a tag for the Document.
     In case of iterable configs we will iterate over and run each of them.
@@ -359,6 +292,8 @@ def run(
     config_parameter: str, optional
         If specified, parsed config will be passed to called function as a parameter with this name.
         `func` parameter must be specified.
+    as_dictobj:
+        Returns DictObj if true and possible
 
     Returns
     -------
@@ -373,24 +308,26 @@ def run(
     if isinstance(config, Iterable):
         return list(
             _iter_run(
-                config,
-                func,
-                verbose,
-                return_values,
-                return_configs,
-                config_parameter,
-                strict,
-                nonsequential,
+                configs=config,
+                func=func,
+                verbose=verbose,
+                return_values=return_values,
+                return_configs=return_configs,
+                config_parameter=config_parameter,
+                strict=strict,
+                nonsequential=nonsequential,
+                as_dictobj=as_dictobj,
             )
         )  # mb iter?
 
     return _single_run(
-        config,
-        func,
-        verbose,
-        return_values,
-        return_configs,
-        config_parameter,
-        strict,
-        nonsequential,
+        config=config,
+        func=func,
+        verbose=verbose,
+        return_values=return_values,
+        return_configs=return_configs,
+        config_parameter=config_parameter,
+        strict=strict,
+        nonsequential=nonsequential,
+        as_dictobj=as_dictobj,
     )
