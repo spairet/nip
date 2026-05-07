@@ -27,7 +27,12 @@ def test_config():
             },
             "list": (
                 ["this is float value -12.5", True, NOTHING],
-                {"sdf": [{"sfds": {"abra": None}}, ["nested value", "one more", {"nested": "dict"}]]},
+                {
+                    "sdf": [
+                        {"sfds": {"abra": None}},
+                        ["nested value", "one more", {"nested": "dict"}],
+                    ]
+                },
             ),
         },
     }

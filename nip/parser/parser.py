@@ -34,7 +34,9 @@ class Parser:
         return self.parse(path)
 
     def parse_string(self, string):
-        stream = Stream(string)  # mb: add stream to parser and log errors more convenient
+        stream = Stream(
+            string
+        )  # mb: add stream to parser and log errors more convenient
         tree = elements.Document.read(stream, self)
         if stream:
             raise ParserError(stream, "Wrong statement.")

@@ -8,8 +8,8 @@ def main():
     # wrap_module(builders)
 
     res = load("configs/auto_wrap_config.yaml")
-    print(res['class'])
-    print(res['func'])
+    print(res["class"])
+    print(res["func"])
 
 
 if __name__ == "__main__":

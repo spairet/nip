@@ -22,7 +22,10 @@ def test_strict_1():
 def test_strict_2():
     from nip import load
 
-    with pytest.raises(ConstructorError, match="a: utils.builders.SimpleClass is not an instance of int"):
+    with pytest.raises(
+        ConstructorError,
+        match="a: utils.builders.SimpleClass is not an instance of int",
+    ):
         load("features/strict/configs/strict_func_types_2.nip", strict=True)
 
 
@@ -37,7 +40,8 @@ def test_strict_names():
     from nip import load
 
     with pytest.raises(
-        ParserError, match="4:3: Dict key overwriting is forbidden in `strict` mode. Overwritten key: 'some_name'."
+        ParserError,
+        match="4:3: Dict key overwriting is forbidden in `strict` mode. Overwritten key: 'some_name'.",
     ):
         load("features/strict/configs/double_names.nip", strict=True)
 

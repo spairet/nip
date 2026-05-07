@@ -16,7 +16,13 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class Constructor:
-    def __init__(self, ignore_rewriting=False, load_builders=True, strict_typing=False, as_dictobj: bool = False):
+    def __init__(
+        self,
+        ignore_rewriting=False,
+        load_builders=True,
+        strict_typing=False,
+        as_dictobj: bool = False,
+    ):
         self.builders = {}
         self.ignore_rewriting = ignore_rewriting
         if load_builders:
@@ -42,7 +48,9 @@ class Constructor:
         """
         if tag is None:
             tag = func.__name__
-        assert self.ignore_rewriting or tag not in self.builders, f"Builder for tag '{tag}' already registered"
+        assert (
+            self.ignore_rewriting or tag not in self.builders
+        ), f"Builder for tag '{tag}' already registered"
         self.builders[tag] = func
 
     def load_builders(self):
@@ -90,7 +98,11 @@ def construct_with_args(name, args, kwargs, constructor: Constructor, node):
     builder = builder or pydoc.locate(name)
     if builder is None:
         raise ConstructorError(
-            node, args, kwargs, f"Builder for '{name}' is not registered and unable to locate.", name=name
+            node,
+            args,
+            kwargs,
+            f"Builder for '{name}' is not registered and unable to locate.",
+            name=name,
         )
 
     messages = check_typing(builder, args, kwargs)
@@ -98,7 +110,9 @@ def construct_with_args(name, args, kwargs, constructor: Constructor, node):
         if constructor.strict_typing:
             raise ConstructorError(node, args, kwargs, "\n".join(messages), name=name)
         else:
-            _LOGGER.warning(f"Typing mismatch while constructing {name}:\n" + "\n".join(messages))
+            _LOGGER.warning(
+                f"Typing mismatch while constructing {name}:\n" + "\n".join(messages)
+            )
 
     try:  # Try to construct
         return builder(*args, **kwargs)
@@ -175,7 +189,11 @@ def wrap_module(module: Union[str, ModuleType], wrap_builtins=False, convertable
         module = importlib.import_module(module)
 
     for value in module.__dict__.values():
-        if isinstance(value, (type, FunctionType)) or wrap_builtins and isinstance(value, BuiltinFunctionType):
+        if (
+            isinstance(value, (type, FunctionType))
+            or wrap_builtins
+            and isinstance(value, BuiltinFunctionType)
+        ):
             nip(value, convertable=convertable and isinstance(value, type))
 
     return module

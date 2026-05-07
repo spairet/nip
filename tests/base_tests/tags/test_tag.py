@@ -1,7 +1,5 @@
 import pytest
 
-import nip.constructor
-
 
 def test_numpy():
     import numpy as np
@@ -44,8 +42,14 @@ def test_empty_construction():
     from nip import load
 
     result = load("base_tests/tags/configs/empty_args.nip")
-    assert isinstance(result["obj"], builders.ClassWithDefaults) and result["obj"].name == "something"
-    assert isinstance(result["another_one"], builders.ClassWithDefaults) and result["another_one"].name == "something"
+    assert (
+        isinstance(result["obj"], builders.ClassWithDefaults)
+        and result["obj"].name == "something"
+    )
+    assert (
+        isinstance(result["another_one"], builders.ClassWithDefaults)
+        and result["another_one"].name == "something"
+    )
     assert (
         isinstance(result["constructed"], builders.ClassWithDefaults)
         and result["constructed"].name == "smothing more interesting"
@@ -55,9 +59,10 @@ def test_empty_construction():
 def test_no_args():
     from nip import load
     from nip.constructor import ConstructorError
-    from utils import builders
 
-    with pytest.raises(ConstructorError, match="missing 1 required positional argument: 'a'"):
+    with pytest.raises(
+        ConstructorError, match="missing 1 required positional argument: 'a'"
+    ):
         load("base_tests/tags/configs/no_args_func_error.nip")
 
 

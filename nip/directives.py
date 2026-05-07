@@ -6,7 +6,9 @@ from .stream import Stream
 from .update import update
 
 
-def insert_directive(node, stream: Stream):  # mb: class; mb: just a Node, not a directive
+def insert_directive(
+    node, stream: Stream
+):  # mb: class; mb: just a Node, not a directive
     if isinstance(node, nip.elements.Value):
         path = node.to_python()
         assert isinstance(path, str), "Load directive expects path as an argument."
@@ -15,7 +17,9 @@ def insert_directive(node, stream: Stream):  # mb: class; mb: just a Node, not a
         return config._value
 
     elif isinstance(node, nip.elements.Args):
-        assert len(node._args) == 1, "only single positional argument will be treated as config path."
+        assert (
+            len(node._args) == 1
+        ), "only single positional argument will be treated as config path."
         path = node[0].to_python()
         assert isinstance(path, str), "Load directive expects path as first argument."
         parser = Parser()
@@ -32,7 +36,9 @@ def insert_directive(node, stream: Stream):  # mb: class; mb: just a Node, not a
 
 def update_directive(node, stream: Stream):  # mb: skip directive operator
     if not isinstance(node, nip.elements.Args) or "_update_" not in node:
-        raise ParserError(stream, "!!update directive expects dict node with __update__ key.")
+        raise ParserError(
+            stream, "!!update directive expects dict node with __update__ key."
+        )
     update_config_path = node["_update_"].to_python()
     del node._kwargs["_update_"]
     return update(node, update_config_path)
@@ -40,7 +46,9 @@ def update_directive(node, stream: Stream):  # mb: skip directive operator
 
 def base_directive(node, stream: Stream):  # mb: parent
     if not isinstance(node, nip.elements.Args) or "_base_" not in node:
-        raise ParserError(stream, "!!base directive expects dict node with __base__ key.")
+        raise ParserError(
+            stream, "!!base directive expects dict node with __base__ key."
+        )
     base_config_path = node["_base_"].to_python()
     base_config = parse(base_config_path)
     if isinstance(base_config, nip.elements.Document):
@@ -49,7 +57,11 @@ def base_directive(node, stream: Stream):  # mb: parent
     return update(base_config, node)
 
 
-_directives = {"insert": insert_directive, "update": update_directive, "base": base_directive}
+_directives = {
+    "insert": insert_directive,
+    "update": update_directive,
+    "base": base_directive,
+}
 
 
 def call_directive(name, right_value, stream: Stream):

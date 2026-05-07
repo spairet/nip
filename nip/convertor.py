@@ -40,7 +40,9 @@ class Convertor:
 
         raise ConvertorError(obj, "No convertor specified for this class")
 
-    def register(self, class_: Union[type, str], func: Callable, tag: Optional[str] = None):
+    def register(
+        self, class_: Union[type, str], func: Callable, tag: Optional[str] = None
+    ):
         if isinstance(class_, type):
             class_name = class_.__name__
         elif isinstance(class_, str):
@@ -49,7 +51,10 @@ class Convertor:
             raise TypeError("Expected type or str as class_ argument")
         if tag is None:
             for builder_tag, builder in global_builders.items():
-                if isinstance(builder, type) and builder.__class__.__name__ == class_name:
+                if (
+                    isinstance(builder, type)
+                    and builder.__class__.__name__ == class_name
+                ):
                     tag = builder_tag
             tag = tag or class_name
         self.convertors[class_name] = (tag, func)
@@ -68,7 +73,10 @@ class ConvertorError(Exception):
         self.message = message
 
     def __str__(self):
-        return f"Unable to convert object {self.obj} of class {self.class_name} to nip: " f"{self.message}"
+        return (
+            f"Unable to convert object {self.obj} of class {self.class_name} to nip: "
+            f"{self.message}"
+        )
 
 
 def pin(class_name: str, tag: str):
