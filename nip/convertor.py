@@ -35,7 +35,7 @@ class Convertor:
         if isinstance(obj, (list, tuple)):
             return Args(args=[self.convert(value) for value in obj], kwargs={})
 
-        if isinstance(obj, (int, float, str, bool)):
+        if isinstance(obj, (int, float, str, bool, type(None))):
             return Value("value", obj)
 
         raise ConvertorError(obj, "No convertor specified for this class")

@@ -150,6 +150,7 @@ class Value(Node):
     def read(cls, stream: nip.stream.Stream, parser: nip.parser.Parser) -> Union[None, Value]:
         tokens_list = [
             tokens.Number,
+            tokens.NoneToken,
             tokens.Bool,
             tokens.String,
             tokens.List,
