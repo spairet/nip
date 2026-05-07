@@ -1,19 +1,22 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import nip
-import nip.constructor
-import nip.dumper
-import nip.parser
-import nip.stream
-import nip.tokens as tokens
-import nip.utils
+from .. import tokens
 
 from .base import Node
+
+if TYPE_CHECKING:
+    from ..constructor import Constructor
+    from ..dumper import Dumper
+    from ..parser.parser import Parser
+    from ..stream import Stream
 
 
 class Value(Node):
     @classmethod
-    def read(cls, stream: nip.stream.Stream, parser: nip.parser.Parser):
+    def read(cls, stream: Stream, parser: Parser):
         tokens_list = [
             tokens.Number,
             tokens.NoneToken,
@@ -36,11 +39,11 @@ class Value(Node):
         return self._value
 
     @nip.constructor.construct_method
-    def _construct(self, constructor: nip.constructor.Constructor = None):
+    def _construct(self, constructor: Constructor = None):
         constructor[self] = self._value
         return self._value
 
-    def _dump(self, dumper: nip.dumper.Dumper):
+    def _dump(self, dumper: Dumper):
         if isinstance(self._value, str):
             return f'"{self._value}"'
         return str(self._value)
@@ -51,7 +54,7 @@ class Value(Node):
 
 class InlinePython(Node):
     @classmethod
-    def read(cls, stream: nip.stream.Stream, parser: nip.parser.Parser):
+    def read(cls, stream: Stream, parser: Parser):
         read_tokens = stream.peek(tokens.InlinePython)
         if read_tokens is None:
             return None
@@ -60,7 +63,7 @@ class InlinePython(Node):
         return InlinePython(value=exec_string, line=line, pos=pos)
 
     @nip.constructor.construct_method
-    def _construct(self, constructor: nip.constructor.Constructor):
+    def _construct(self, constructor: Constructor):
         symbols, attributes_access = nip.utils.extract_symbols_from_code(self._value)
         namespace = nip.utils.Namespace()
         root = self._get_root()
@@ -73,7 +76,7 @@ class InlinePython(Node):
         locals().update(namespace.__dict__)
         return eval(self._value)
 
-    def _dump(self, dumper: nip.dumper.Dumper):
+    def _dump(self, dumper: Dumper):
         return f"`{self._value}`"
 
     def to_python(self):
@@ -82,7 +85,7 @@ class InlinePython(Node):
 
 class Nothing(Node):
     @classmethod
-    def read(cls, stream: nip.stream.Stream, parser: nip.parser.Parser):
+    def read(cls, stream: Stream, parser: Parser):
         line, pos = stream.line, stream.pos
         if not stream:
             return Nothing(line=line, pos=pos)
@@ -95,10 +98,10 @@ class Nothing(Node):
             return Nothing(line=line, pos=pos)
 
     @nip.constructor.construct_method
-    def _construct(self, constructor: nip.constructor.Constructor):
+    def _construct(self, constructor: Constructor):
         return self
 
-    def _dump(self, dumper: nip.dumper.Dumper):
+    def _dump(self, dumper: Dumper):
         return ""
 
     def to_python(self):
@@ -107,7 +110,7 @@ class Nothing(Node):
 
 class FString(Node):
     @classmethod
-    def read(cls, stream: nip.stream.Stream, parser: nip.parser.Parser):
+    def read(cls, stream: Stream, parser: Parser):
         read_tokens = stream.peek(tokens.PythonString)
         if read_tokens is None:
             return None
@@ -120,7 +123,7 @@ class FString(Node):
         return FString(value=string, line=line, pos=pos)
 
     @nip.constructor.construct_method
-    def _construct(self, constructor: nip.constructor.Constructor):
+    def _construct(self, constructor: Constructor):
         symbols, attributes_access = nip.utils.extract_symbols_from_code(
             f"f{self._value}"
         )
@@ -135,7 +138,7 @@ class FString(Node):
         locals().update(namespace.__dict__)
         return eval(f"f{self._value}")
 
-    def _dump(self, dumper: nip.dumper.Dumper):
+    def _dump(self, dumper: Dumper):
         return f"f{self._value}"
 
     def to_python(self):

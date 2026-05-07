@@ -1,20 +1,24 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import nip
-import nip.constructor
-import nip.dumper
-import nip.non_seq_constructor
-import nip.parser
-import nip.stream
-import nip.tokens as tokens
+from .. import tokens
 
 from .base import Node
 from .reader import read_node
 
+if TYPE_CHECKING:
+    from ..constructor import Constructor
+    from ..dumper import Dumper
+    from ..non_seq_constructor import NonSequentialConstructor
+    from ..parser.parser import Parser
+    from ..stream import Stream
+
 
 class LinkCreation(Node):
     @classmethod
-    def read(cls, stream: nip.stream.Stream, parser: nip.parser.Parser):
+    def read(cls, stream: Stream, parser: Parser):
         read_tokens = stream.peek(tokens.Operator("&"), tokens.Name)
         if read_tokens is None:
             return None
@@ -28,17 +32,17 @@ class LinkCreation(Node):
         return LinkCreation(name, value, line, pos)
 
     @nip.constructor.construct_method
-    def _construct(self, constructor: nip.constructor.Constructor):
+    def _construct(self, constructor: Constructor):
         constructor[self._name] = self
         return self._value._construct(constructor)
 
-    def _dump(self, dumper: nip.dumper.Dumper):
+    def _dump(self, dumper: Dumper):
         return f"&{self._name} {self._value._dump(dumper)}"
 
 
 class Link(Node):
     @classmethod
-    def read(cls, stream: nip.stream.Stream, parser: nip.parser.Parser):
+    def read(cls, stream: Stream, parser: Parser):
         read_tokens = stream.peek(tokens.Operator("*"), tokens.Name)
         if read_tokens is None:
             return None
@@ -58,7 +62,7 @@ class Link(Node):
         return "nil"
 
     @nip.constructor.construct_method
-    def _construct(self, constructor: nip.non_seq_constructor.NonSequentialConstructor):
+    def _construct(self, constructor: NonSequentialConstructor):
         root = self._get_root()
         if self._name in constructor.links:
             value = constructor[self._name]
@@ -68,7 +72,7 @@ class Link(Node):
             raise NameError(f"Unable to resolve link '{self._name}'.")
         return value
 
-    def _dump(self, dumper: nip.dumper.Dumper):
+    def _dump(self, dumper: Dumper):
         return f"*{self._name}"
 
     def __getitem__(self, item):

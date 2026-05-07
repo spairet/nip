@@ -1,12 +1,15 @@
 from __future__ import annotations
 
-import nip.parser
-import nip.stream
+from typing import TYPE_CHECKING
 
 from .base import Node
 
+if TYPE_CHECKING:
+    from ..parser.parser import Parser
+    from ..stream import Stream
 
-def read_node(stream: nip.stream.Stream, parser: nip.parser.Parser) -> Node:
+
+def read_node(stream: Stream, parser: Parser) -> Node:
     from .args import Args
     from .directive import Directive
     from .iter_node import Iter
@@ -29,5 +32,7 @@ def read_node(stream: nip.stream.Stream, parser: nip.parser.Parser) -> Node:
     )
 
     if value is None:
+        import nip
+
         raise nip.parser.ParserError(stream, "Wrong right value")
     return value

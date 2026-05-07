@@ -2,15 +2,15 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, Dict, Union
+from typing import TYPE_CHECKING, Any, Dict, Union
 
 import nip
-import nip.constructor
-import nip.dict
-import nip.dumper
-import nip.parser
-import nip.stream
-import nip.utils
+
+if TYPE_CHECKING:
+    from ..constructor import Constructor
+    from ..dumper import Dumper
+    from ..parser.parser import Parser
+    from ..stream import Stream
 
 
 class Node(ABC, object):
@@ -25,9 +25,7 @@ class Node(ABC, object):
 
     @classmethod
     @abstractmethod
-    def read(
-        cls, stream: nip.stream.Stream, parser: nip.parser.Parser
-    ) -> Union["Node", None]:
+    def read(cls, stream: Stream, parser: Parser) -> Union["Node", None]:
         pass
 
     def __str__(self):
@@ -72,7 +70,7 @@ class Node(ABC, object):
         return data
 
     @nip.constructor.construct_method
-    def _construct(self, constructor: nip.constructor.Constructor):
+    def _construct(self, constructor: Constructor):
         return self._value._construct(constructor)
 
     def construct(self, strict_typing: bool = False, as_dictobj: bool = False):
@@ -80,7 +78,7 @@ class Node(ABC, object):
             self, strict_typing=strict_typing, nonsequential=True, as_dictobj=as_dictobj
         )
 
-    def _dump(self, dumper: nip.dumper.Dumper):
+    def _dump(self, dumper: Dumper):
         return self._value._dump(dumper)
 
     def dump(self, path: Union[str, Path]):

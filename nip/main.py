@@ -54,18 +54,14 @@ def construct(
     """
     if nonsequential or base_config is not None:
         base_config = base_config or config._get_root()
-        constructor = NonSequentialConstructor(
-            base_config, strict_typing=strict_typing, as_dictobj=as_dictobj
-        )
+        constructor = NonSequentialConstructor(base_config, strict_typing=strict_typing, as_dictobj=as_dictobj)
     else:
         constructor = Constructor(strict_typing=strict_typing, as_dictobj=as_dictobj)
     result = constructor.construct(config)
     return result
 
 
-def _iter_load(
-    configs, strict_typing, nonsequential, as_dictobj
-):  # Otherwise load() will always be an iterator
+def _iter_load(configs, strict_typing, nonsequential, as_dictobj):  # Otherwise load() will always be an iterator
     for config in configs:
         yield construct(
             config,
@@ -105,9 +101,7 @@ def load(
     if isinstance(config, Iterable):
         return _iter_load(config, strict, nonsequential, as_dictobj)
 
-    return construct(
-        config, strict_typing=strict, nonsequential=nonsequential, as_dictobj=as_dictobj
-    )
+    return construct(config, strict_typing=strict, nonsequential=nonsequential, as_dictobj=as_dictobj)
 
 
 def load_string(
@@ -140,9 +134,7 @@ def load_string(
     if isinstance(config, Iterable):
         return _iter_load(config, strict, nonsequential, as_dictobj)
 
-    return construct(
-        config, strict_typing=strict, nonsequential=nonsequential, as_dictobj=as_dictobj
-    )
+    return construct(config, strict_typing=strict, nonsequential=nonsequential, as_dictobj=as_dictobj)
 
 
 def dump(path: Union[str, Path], obj: Union[elements.Node, object]):
@@ -156,9 +148,7 @@ def dump(path: Union[str, Path], obj: Union[elements.Node, object]):
         Read or generated config if Element. In case of any other object `convert` will be called.
     """
     if not isinstance(obj, elements.Node):
-        obj = convert(
-            obj
-        )  # mb: wrap with Document to ensure getting `---` at the beginning of the file.
+        obj = convert(obj)  # mb: wrap with Document to ensure getting `---` at the beginning of the file.
     dumper = Dumper()
     dumper.dump(path, obj)
 
@@ -237,24 +227,16 @@ def _single_run(
         print(dump_string(config))
         print("----")
 
-    value = construct(
-        config, strict_typing=strict, nonsequential=nonsequential, as_dictobj=as_dictobj
-    )
+    value = construct(config, strict_typing=strict, nonsequential=nonsequential, as_dictobj=as_dictobj)
     if func is not None:
-        if (
-            isinstance(value, tuple)
-            and isinstance(value[0], list)
-            and isinstance(value[1], dict)
-        ):
+        if isinstance(value, tuple) and isinstance(value[0], list) and isinstance(value[1], dict):
             args, kwargs = value
         elif isinstance(value, list):
             args, kwargs = value, {}
         elif isinstance(value, dict):
             args, kwargs = [], value
         else:
-            raise RuntimeError(
-                "Value constructed by the config cant be parsed as args and kwargs"
-            )
+            raise RuntimeError("Value constructed by the config cant be parsed as args and kwargs")
 
         if config_parameter:
             if config_parameter in kwargs:

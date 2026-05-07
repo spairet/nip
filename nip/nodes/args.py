@@ -1,18 +1,18 @@
 from __future__ import annotations
 
-from typing import Tuple, Union
+from typing import TYPE_CHECKING, Tuple, Union
 
 import nip
-import nip.constructor
-import nip.dict
-import nip.dumper
-import nip.parser
-import nip.stream
-import nip.tokens as tokens
-import nip.utils
+from .. import tokens
 
 from .base import Node
 from .reader import read_node
+
+if TYPE_CHECKING:
+    from ..constructor import Constructor
+    from ..dumper import Dumper
+    from ..parser.parser import Parser
+    from ..stream import Stream
 
 
 class Args(Node):
@@ -26,7 +26,7 @@ class Args(Node):
         self._pos = pos
 
     @classmethod
-    def read(cls, stream: nip.stream.Stream, parser: nip.parser.Parser):
+    def read(cls, stream: Stream, parser: Parser):
         start_indent = stream.pos
         if start_indent <= parser.last_indent:
             return None
@@ -67,7 +67,7 @@ class Args(Node):
 
     @classmethod
     def _read_list_item(
-        cls, stream: nip.stream.Stream, parser: nip.parser.Parser
+        cls, stream: Stream, parser: Parser
     ) -> Union[Tuple[Node, Tuple[int, int]], Tuple[None, None]]:
         read_tokens = stream.peek(tokens.Operator("- "))
         if read_tokens is None:
@@ -78,7 +78,7 @@ class Args(Node):
 
     @classmethod
     def _read_dict_pair(
-        cls, stream: nip.stream.Stream, parser: nip.parser.Parser, kwargs_keys
+        cls, stream: Stream, parser: Parser, kwargs_keys
     ) -> Union[Tuple[str, Node, Tuple[int, int]], Tuple[None, None, None]]:
         read_tokens = stream.peek(tokens.Name, tokens.Operator(": "))
         if read_tokens is None:
@@ -209,7 +209,7 @@ class Args(Node):
         return args or kwargs
 
     @nip.constructor.construct_method
-    def _construct(self, constructor: nip.constructor.Constructor, always_pair=False):
+    def _construct(self, constructor: Constructor, always_pair=False):
         args = list(item._construct(constructor) for item in self._args)
         kwargs = {
             key: value._construct(constructor)
@@ -238,7 +238,7 @@ class Args(Node):
             nip.dict.DictObject(kwargs) if constructor.as_dictobj else kwargs
         )
 
-    def _dump(self, dumper: nip.dumper.Dumper):
+    def _dump(self, dumper: Dumper):
         dumped_args = "\n".join(
             [
                 " " * dumper.indent + f"- {item._dump(dumper + dumper.default_shift)}"

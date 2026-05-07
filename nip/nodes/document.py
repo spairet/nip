@@ -1,14 +1,16 @@
 from __future__ import annotations
 
-from typing import Any, Union
+from typing import TYPE_CHECKING, Any, Union
 
-import nip.dumper
-import nip.parser
-import nip.stream
-import nip.tokens as tokens
+from .. import tokens
 
 from .base import Node
 from .reader import read_node
+
+if TYPE_CHECKING:
+    from ..dumper import Dumper
+    from ..parser.parser import Parser
+    from ..stream import Stream
 
 
 class Document(Node):
@@ -25,14 +27,14 @@ class Document(Node):
         self._pos = pos
 
     @classmethod
-    def read(cls, stream: nip.stream.Stream, parser: nip.parser.Parser) -> "Document":
+    def read(cls, stream: Stream, parser: Parser) -> "Document":
         line, pos = stream.line, stream.pos
         doc_name = cls._read_name(stream)
         content = read_node(stream, parser)
         return Document(doc_name, content, line, pos)
 
     @classmethod
-    def _read_name(cls, stream: nip.stream.Stream):
+    def _read_name(cls, stream: Stream):
         read_tokens = stream.peek(tokens.Operator("---"), tokens.Name) or stream.peek(
             tokens.Operator("---")
         )
@@ -42,7 +44,7 @@ class Document(Node):
                 return read_tokens[1]._value
         return ""
 
-    def _dump(self, dumper: nip.dumper.Dumper):
+    def _dump(self, dumper: Dumper):
         string = "---"
         if self._name:
             string += " " + self._name + " "

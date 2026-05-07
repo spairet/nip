@@ -1,20 +1,24 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import nip
-import nip.constructor
-import nip.dumper
-import nip.parser
-import nip.stream
-import nip.tokens as tokens
+from .. import tokens
 
 from .base import Node
 from .reader import read_node
 from .scalar import Nothing
 
+if TYPE_CHECKING:
+    from ..constructor import Constructor
+    from ..dumper import Dumper
+    from ..parser.parser import Parser
+    from ..stream import Stream
+
 
 class Tag(Node):
     @classmethod
-    def read(cls, stream: nip.stream.Stream, parser: nip.parser.Parser):
+    def read(cls, stream: Stream, parser: Parser):
         read_tokens = stream.peek(tokens.Operator("!"), tokens.Name)
         if read_tokens is None:
             return None
@@ -25,7 +29,7 @@ class Tag(Node):
         return Tag(name, value, line=line, pos=pos)
 
     @nip.constructor.construct_method
-    def _construct(self, constructor: nip.constructor.Constructor):
+    def _construct(self, constructor: Constructor):
         from .args import Args
 
         if isinstance(self._value, Args):
@@ -40,13 +44,13 @@ class Tag(Node):
             self._name, args, kwargs, constructor, self
         )
 
-    def _dump(self, dumper: nip.dumper.Dumper):
+    def _dump(self, dumper: Dumper):
         return f"!{self._name} " + self._value._dump(dumper)
 
 
 class Class(Node):
     @classmethod
-    def read(cls, stream: nip.stream.Stream, parser: nip.parser.Parser):
+    def read(cls, stream: Stream, parser: Parser):
         read_tokens = stream.peek(tokens.Operator("!&"), tokens.Name)
         if read_tokens is None:
             return None
@@ -62,12 +66,12 @@ class Class(Node):
         return Class(name, value, line=line, pos=pos)
 
     @nip.constructor.construct_method
-    def _construct(self, constructor: nip.constructor.Constructor):
+    def _construct(self, constructor: Constructor):
         value = self._value._construct(constructor)
         assert isinstance(
             value, Nothing
         ), "Unexpected right value while constructing Class"
         return constructor.builders[self._name]
 
-    def _dump(self, dumper: nip.dumper.Dumper):
+    def _dump(self, dumper: Dumper):
         return f"!&{self._name} " + self._value._dump(dumper)

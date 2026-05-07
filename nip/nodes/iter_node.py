@@ -1,17 +1,19 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import nip
-import nip.constructor
-import nip.dumper
-import nip.parser
-import nip.stream
-import nip.tokens as tokens
+from .. import tokens
 
 from .base import Node
 from .reader import read_node
 from .scalar import Value
+
+if TYPE_CHECKING:
+    from ..constructor import Constructor
+    from ..dumper import Dumper
+    from ..parser.parser import Parser
+    from ..stream import Stream
 
 
 class Iter(Node):
@@ -24,7 +26,7 @@ class Iter(Node):
         self._pos = pos
 
     @classmethod
-    def read(cls, stream: nip.stream.Stream, parser: nip.parser.Parser):
+    def read(cls, stream: Stream, parser: Parser):
         from .args import Args
 
         read_tokens = stream.peek(tokens.Operator("@"), tokens.Name) or stream.peek(
@@ -58,7 +60,7 @@ class Iter(Node):
         return self._value[self._return_index]
 
     @nip.constructor.construct_method
-    def _construct(self, constructor: nip.constructor.Constructor):
+    def _construct(self, constructor: Constructor):
         from .args import Args
 
         if self._return_index == -1:
@@ -72,7 +74,7 @@ class Iter(Node):
                 self, (), {}, "Unexpected iter value type"
             )
 
-    def _dump(self, dumper: nip.dumper.Dumper):
+    def _dump(self, dumper: Dumper):
         from .args import Args
 
         if self._return_index == -1:
