@@ -1,0 +1,18 @@
+[flake8]
+max-complexity = 20
+max-line-length = 120
+ignore = D105, D202, D401, E203, W503, W504, C901
+exclude =
+    venv
+    .venv
+    .git
+    .pytest_cache
+    _junk
+    dist
+    build
+    nip_config.egg-info
+docstring-convention = numpy
+select = B,C,D,E,F,W,T4,B9
+per-file-ignores =
+    nip/__init__.py:F401
+    nip/parser/__init__.py:F401

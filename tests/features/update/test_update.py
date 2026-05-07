@@ -40,9 +40,12 @@ def test_directive_update():
     assert data["some"]["deep"][0]["parameter"] == 42
 
 
-def test_node_update():  # actually update is just more flexible than update_flatten
+def test_node_update(
+    tmp_path,
+):  # actually update is just more flexible than update_flatten
     config = nip.parse("features/update/configs/node_update.nip")
-    nip.dump("features/update/dump/node_updated_config.nip", config)
-    data = nip.load("features/update/dump/node_updated_config.nip")
+    dump_path = tmp_path / "node_updated_config.nip"
+    nip.dump(str(dump_path), config)
+    data = nip.load(str(dump_path))
     assert data["some"]["inserted_node"]["params"]["first"] == 2
     assert data["some"]["inserted_node"]["params"]["second"] == "three"

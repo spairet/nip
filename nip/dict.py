@@ -1,8 +1,3 @@
-from typing import List, Any, Union
-
-from .utils import iterate_items
-
-
 class DictObject(dict):
     def __getattr__(self, item):
         return self[item]

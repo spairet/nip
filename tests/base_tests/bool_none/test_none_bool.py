@@ -16,7 +16,7 @@ def test_bool_none():
     assert deep_conditioned_compare(expected, result)
 
 
-def test_bool_none_dump():
+def test_bool_none_dump(tmp_path):
     import nip
 
     obj = {
@@ -25,7 +25,8 @@ def test_bool_none_dump():
         "booleans": [True, True, True],
         "other_booleans": [False, False, False],
     }
-    nip.dump("base_tests/bool_none/dumps/bool_none.nip", obj)
-    result = nip.load("base_tests/bool_none/dumps/bool_none.nip")
+    dump_path = tmp_path / "bool_none.nip"
+    nip.dump(str(dump_path), obj)
+    result = nip.load(str(dump_path))
     assert obj == result
     assert deep_conditioned_compare(obj, result)

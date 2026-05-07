@@ -49,7 +49,11 @@ def base_directive(node, stream: Stream):  # mb: parent
     return update(base_config, node)
 
 
-_directives = {"insert": insert_directive, "update": update_directive, "base": base_directive}
+_directives = {
+    "insert": insert_directive,
+    "update": update_directive,
+    "base": base_directive,
+}
 
 
 def call_directive(name, right_value, stream: Stream):

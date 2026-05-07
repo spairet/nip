@@ -8,7 +8,10 @@ from nip.elements import Nothing
 # IS_NOTHING = lambda obj, None: obj is None
 
 NOTHING = Nothing()
-IS_NOTHING = lambda obj: isinstance(obj, Nothing)
+
+
+def IS_NOTHING(obj):
+    return isinstance(obj, Nothing)
 
 
 def nothing_comparison(first, second):

@@ -2,7 +2,6 @@ import symtable
 
 import nip.elements
 from .constructor import Constructor
-from typing import Dict, Any
 
 
 class NonSequentialConstructor(Constructor):

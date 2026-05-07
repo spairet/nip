@@ -1,14 +1,14 @@
 from pathlib import Path
-from typing import Union, Any, Iterable, Callable, Optional
+from typing import Any, Callable, Iterable, Optional, Union
 
 from nip.parser.parse_func import parse, parse_string
-from nip.update import update_flatten, update
+from nip.update import update, update_flatten
+
 from . import elements
 from .constructor import Constructor
 from .convertor import Convertor
 from .dumper import Dumper
 from .non_seq_constructor import NonSequentialConstructor
-from .dict import DictObject
 
 __all__ = [
     "parse",
@@ -63,7 +63,12 @@ def construct(
 
 def _iter_load(configs, strict_typing, nonsequential, as_dictobj):  # Otherwise load() will always be an iterator
     for config in configs:
-        yield construct(config, strict_typing=strict_typing, nonsequential=nonsequential, as_dictobj=as_dictobj)
+        yield construct(
+            config,
+            strict_typing=strict_typing,
+            nonsequential=nonsequential,
+            as_dictobj=as_dictobj,
+        )
 
 
 def load(
@@ -206,7 +211,15 @@ def _run_return(value, config, return_values, return_configs):
 
 
 def _single_run(
-    config, func, verbose, return_values, return_configs, config_parameter, strict, nonsequential, as_dictobj
+    config,
+    func,
+    verbose,
+    return_values,
+    return_configs,
+    config_parameter,
+    strict,
+    nonsequential,
+    as_dictobj,
 ):
     if verbose:
         print("=" * 20)
@@ -244,11 +257,27 @@ def _single_run(
 
 
 def _iter_run(
-    configs, func, verbose, return_values, return_configs, config_parameter, strict, nonsequential, as_dictobj
+    configs,
+    func,
+    verbose,
+    return_values,
+    return_configs,
+    config_parameter,
+    strict,
+    nonsequential,
+    as_dictobj,
 ):
     for config in configs:
         run_return = _single_run(
-            config, func, verbose, return_values, return_configs, config_parameter, strict, nonsequential, as_dictobj
+            config,
+            func,
+            verbose,
+            return_values,
+            return_configs,
+            config_parameter,
+            strict,
+            nonsequential,
+            as_dictobj,
         )
         if run_return:
             yield run_return

@@ -4,10 +4,10 @@ import importlib
 import importlib.util
 import logging
 import pydoc
-from types import FunctionType, ModuleType, BuiltinFunctionType
+from types import BuiltinFunctionType, FunctionType, ModuleType
 from typing import Callable, Optional, Union
 
-from .utils import get_sub_dict, check_typing
+from .utils import check_typing, get_sub_dict
 
 global_builders = {}  # builders shared between Constructors
 global_calls = {}  # history of object creations
@@ -16,7 +16,13 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class Constructor:
-    def __init__(self, ignore_rewriting=False, load_builders=True, strict_typing=False, as_dictobj: bool = False):
+    def __init__(
+        self,
+        ignore_rewriting=False,
+        load_builders=True,
+        strict_typing=False,
+        as_dictobj: bool = False,
+    ):
         self.builders = {}
         self.ignore_rewriting = ignore_rewriting
         if load_builders:
@@ -90,7 +96,11 @@ def construct_with_args(name, args, kwargs, constructor: Constructor, node):
     builder = builder or pydoc.locate(name)
     if builder is None:
         raise ConstructorError(
-            node, args, kwargs, f"Builder for '{name}' is not registered and unable to locate.", name=name
+            node,
+            args,
+            kwargs,
+            f"Builder for '{name}' is not registered and unable to locate.",
+            name=name,
         )
 
     messages = check_typing(builder, args, kwargs)

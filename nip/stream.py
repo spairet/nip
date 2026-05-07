@@ -55,7 +55,10 @@ class Stream:
         line, pos = self.line, self.pos
         self.pos = self.last_peak_pos
         self._pass_forward()
-        return line, pos  # the point we started reading, since this log is more convenient for user
+        return (
+            line,
+            pos,
+        )  # the point we started reading, since this log is more convenient for user
 
     def _pass_forward(self):
         while self and (

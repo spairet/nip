@@ -44,7 +44,7 @@ class Number(Token):
             try:
                 value = t(string)
                 break
-            except:
+            except (ValueError, OverflowError):
                 pass
         if value is not None:
             return len(string), Number(value)
@@ -130,7 +130,24 @@ class Name(String):
 
 
 class Operator(Token):
-    operators = ["---", "@", "#", "&", "!&", "!!", "!", "- ", ": ", "*", "{", "}", "[", "]", "(", ")"]
+    operators = [
+        "---",
+        "@",
+        "#",
+        "&",
+        "!&",
+        "!!",
+        "!",
+        "- ",
+        ": ",
+        "*",
+        "{",
+        "}",
+        "[",
+        "]",
+        "(",
+        ")",
+    ]
 
     @staticmethod
     def read(stream: str) -> Tuple[int, Union[None, Operator]]:

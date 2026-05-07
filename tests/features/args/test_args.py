@@ -1,6 +1,3 @@
-import pytest
-
-
 def test_args():
     from nip import load, wrap_module
 
