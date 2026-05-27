@@ -3,10 +3,11 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Tuple, Union
 
 import nip
-from .. import tokens
 
+from .. import tokens
 from .base import Node
 from .reader import read_node
+from .utils import STEP_INTO_NODE_TYPES, step_into_node
 
 if TYPE_CHECKING:
     from ..constructor import Constructor
@@ -130,7 +131,13 @@ class Args(Node):
                 return item[len(key) + 1 :], self._kwargs[key]
         return None, None
 
-    def _set_sub_item(self, key, value):
+    def _set_sub_item(self, key: Union[int, str], value: Node, node: Node = None):
+        if node is value:  # fixes recursion problem with python __setitem__ call after /=
+            return
+        if node is not None and isinstance(node, STEP_INTO_NODE_TYPES):  # lets update values of links and tags
+            parent, node = step_into_node(node)
+            parent._value = value
+            return
         if isinstance(key, int) or key.isnumeric():
             key = int(key)
             if 0 <= key < len(self._args):
@@ -141,6 +148,15 @@ class Args(Node):
                 raise KeyError("You may only update existing arg of the Node or add one using `len(args)` as index")
         else:
             self._kwargs[key] = value
+        self._update_parents()
+
+    def _update_child(self, prev_child: Node, new_child: Node):
+        updated = False
+        for key, item in self:
+            if item is prev_child:
+                self._set_sub_item(key, new_child, None)
+                updated = True
+        assert updated, "did not find child upon updating node."
 
     def __getitem__(self, item) -> Node:
         left_key, node = self._get_sub_item(item)
@@ -167,13 +183,13 @@ class Args(Node):
             value = value._value
 
         left_key, node = self._get_sub_item(key)
-        if node is None:
+        if node is None:  # new item set
             self._set_sub_item(key, value)
             return
-        if left_key:
+        if left_key:  # some part of the key left, lets step into
             node[left_key] = value
-        else:
-            self._set_sub_item(key, value)
+        else:  # we should update here, ot step into link/tag to update its value.
+            self._set_sub_item(key, value, node)
 
     def append(self, value):
         self._args.append(nip.convert(value))

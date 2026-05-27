@@ -1,24 +1,16 @@
 --- MyDocument
 
+other:
+  main: *main
+  list:  # comment
+    - f"this is float value {float_value}"
+    - *second
+
+
 main: &main
   first:
     in1: "11"
-    in2: &float -12.5
-  second: [1, 2, 3]
+    in2: &float_value -12.5
+  second: &second [1, 2, 3]
 
   third: {'a': "123", '123': "qweqwe"}
-
-
-other:
-  main.other: *main
-  list:  # comment
-    - f"this is float value {float}"
-    - true
-    -
-    # more comments
-    sdf:
-      - sfds:
-          abra: "cadabra"
-      - - nested value
-        - one more
-        - nested: dict

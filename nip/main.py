@@ -7,6 +7,7 @@ from nip.update import update, update_flatten
 from . import elements
 from .constructor import Constructor
 from .convertor import Convertor
+from .dict import DictObject
 from .dumper import Dumper
 from .non_seq_constructor import NonSequentialConstructor
 
@@ -22,6 +23,7 @@ __all__ = [
     "convert",
     "update",
     "update_flatten",
+    "DictObject",
 ]
 
 
