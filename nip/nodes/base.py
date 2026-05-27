@@ -56,6 +56,17 @@ class Node(ABC, object):
         else:
             self.__setitem__(key, value)
 
+    def _update_child(self, prev_child: Node, new_child: Node):
+        assert self._value is prev_child
+        self._value = new_child
+        self._update_parents()
+
+    def __ilshift__(self, value):
+        if not isinstance(value, Node):
+            value = nip.convert(value)
+        self._parent._update_child(self, value)
+        return value
+
     def to_python(self):
         return self._value.to_python()
 

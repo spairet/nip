@@ -23,6 +23,7 @@ __all__ = [
     "convert",
     "update",
     "update_flatten",
+    "DictObject",
 ]
 
 
